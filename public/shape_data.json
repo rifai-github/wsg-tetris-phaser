@@ -1,0 +1,87 @@
+[
+    {
+        "shape_name": "i",
+        "outline_path": "/images/shapes/outline/i.png",
+        "color_path": "/images/shapes/colours/i.png",
+        "text_position": [
+            [0, 0]
+        ],
+        "matrix": [
+            [1, 1, 1, 1]
+        ]
+    },
+    {
+        "shape_name": "j",
+        "outline_path": "/images/shapes/outline/j.png",
+        "color_path": "/images/shapes/colours/j.png",
+        "text_position": [
+            [0, 20]
+        ],
+        "matrix": [
+            [1, 0, 0],
+            [1, 1, 1]
+        ]
+    },
+    {
+        "shape_name": "l",
+        "outline_path": "/images/shapes/outline/l.png",
+        "color_path": "/images/shapes/colours/l.png",
+        "text_position": [
+            [0, 20]
+        ],
+        "matrix": [
+            [0, 0, 1],
+            [1, 1, 1]
+        ]
+    },
+    {
+        "shape_name": "o",
+        "outline_path": "/images/shapes/outline/o.png",
+        "color_path": "/images/shapes/colours/o.png",
+        "text_position": [
+            [0, 0]
+        ],
+        "matrix": [
+            [1, 1],
+            [1, 1]
+        ]
+    },
+    {
+        "shape_name": "s",
+        "outline_path": "/images/shapes/outline/s.png",
+        "color_path": "/images/shapes/colours/s.png",
+        "text_position": [
+            [15, -20],
+            [-15, 20]
+        ],
+        "matrix": [
+            [0, 1, 1],
+            [1, 1, 0]
+        ]
+    },
+    {
+        "shape_name": "t",
+        "outline_path": "/images/shapes/outline/t.png",
+        "color_path": "/images/shapes/colours/t.png",
+        "text_position": [
+            [0, -20]
+        ],
+        "matrix": [
+            [1, 1, 1],
+            [0, 1, 0]
+        ]
+    },
+    {
+        "shape_name": "z",
+        "outline_path": "/images/shapes/outline/z.png",
+        "color_path": "/images/shapes/colours/z.png",
+        "text_position": [
+            [-15, -20],
+            [15, 20]
+        ],
+        "matrix": [
+            [1, 1, 0],
+            [0, 1, 1]
+        ]
+    }
+]
