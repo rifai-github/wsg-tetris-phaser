@@ -410,7 +410,7 @@ export class TetrisScene extends Phaser.Scene {
     this.tetrominoRenderer.destroy();
 
     // Clear completed lines
-    const linesCleared = this.gameBoard.clearLines();
+    // const linesCleared = this.gameBoard.clearLines();
 
     // Check game over
     if (this.gameBoard.isGameOver()) {
