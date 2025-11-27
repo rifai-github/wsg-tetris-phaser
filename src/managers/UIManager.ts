@@ -8,6 +8,7 @@ export class UIManager {
   private scene: Phaser.Scene;
   private config: GameConfig;
   private buttons: {
+    skip?: Phaser.GameObjects.Image;
     left?: Phaser.GameObjects.Image;
     right?: Phaser.GameObjects.Image;
     down?: Phaser.GameObjects.Image;
@@ -135,17 +136,29 @@ export class UIManager {
     const buttonSize = 70;
     const spacing = 15;
 
+    // Get query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [
+      { key: 'skip', texture: 'button_skip' },
       { key: 'rotate', texture: 'button_rotate' },
       { key: 'left', texture: 'button_left' },
       { key: 'down', texture: 'button_down' },
       { key: 'right', texture: 'button_right' }
     ];
 
-    // Filter button yang aktif (bisa digunakan untuk hide/show button tertentu)
+    // Filter button yang aktif berdasarkan query param
     const activeButtons = buttonDefinitions.filter(def => {
-      // Semua button aktif by default, tapi bisa di-filter di sini
+      // Hide skip button by default, show only if ?type=skip
+      if (def.key === 'skip') {
+        return typeParam === 'skip';
+      }
+      // Hide rotate button by default, show only if ?type=rotate
+      if (def.key === 'rotate') {
+        return typeParam === 'rotate';
+      }
       return true;
     });
 
@@ -169,11 +182,28 @@ export class UIManager {
    * Setup button callbacks
    */
   setupButtonCallbacks(callbacks: {
+    onSkip: () => void;
     onLeft: () => void;
     onRight: () => void;
     onDown: () => void;
     onRotate: () => void;
   }): void {
+    if (this.buttons.skip) {
+      this.buttons.skip.on('pointerdown', () => {
+        // @ts-ignore
+        this.buttons.skip!.setTint(0xcccccc);
+        callbacks.onSkip();
+      });
+      this.buttons.skip.on('pointerup', () => {
+        // @ts-ignore
+        this.buttons.skip!.clearTint();
+      });
+      this.buttons.skip.on('pointerout', () => {
+        // @ts-ignore
+        this.buttons.skip!.clearTint();
+      });
+    }
+
     if (this.buttons.left) {
       this.buttons.left.on('pointerdown', () => {
         this.buttons.left!.setTint(0xcccccc);

@@ -57,6 +57,7 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('profile', '/images/profile-placeholder.png');
     
     // Load control buttons
+    this.load.image('button_skip', '/images/button/skip.png');
     this.load.image('button_left', '/images/button/left.png');
     this.load.image('button_right', '/images/button/right.png');
     this.load.image('button_down', '/images/button/down.png');
@@ -106,6 +107,7 @@ export class TetrisScene extends Phaser.Scene {
 
     // Setup button controls
     this.uiManager.setupButtonCallbacks({
+      onSkip: () => this.skipCurrentBlock(),
       onLeft: () => this.moveLeft(),
       onRight: () => this.moveRight(),
       onDown: () => this.moveDown(),
@@ -395,6 +397,19 @@ export class TetrisScene extends Phaser.Scene {
     if (this.gameBoard.canPlace(rotatedTetromino)) {
       this.currentTetromino = rotatedTetromino;
     }
+  }
+
+  /**
+   * Skip current block and spawn next one
+   */
+  private skipCurrentBlock(): void {
+    if (!this.currentTetromino) return;
+
+    // Destroy current tetromino renderer
+    this.tetrominoRenderer.destroy();
+
+    // Spawn next tetromino without locking
+    this.spawnNextTetromino();
   }
 
   /**
