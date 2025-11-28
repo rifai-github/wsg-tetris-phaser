@@ -9,6 +9,7 @@ export class UIManager {
   private config: GameConfig;
   private buttons: {
     skip?: Phaser.GameObjects.Image;
+    switch?: Phaser.GameObjects.Image;
     left?: Phaser.GameObjects.Image;
     right?: Phaser.GameObjects.Image;
     down?: Phaser.GameObjects.Image;
@@ -143,6 +144,7 @@ export class UIManager {
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [
       { key: 'skip', texture: 'button_skip' },
+      { key: 'switch', texture: 'button_switch' },
       { key: 'rotate', texture: 'button_rotate' },
       { key: 'left', texture: 'button_left' },
       { key: 'down', texture: 'button_down' },
@@ -154,6 +156,10 @@ export class UIManager {
       // Hide skip button by default, show only if ?type=skip
       if (def.key === 'skip') {
         return typeParam === 'skip';
+      }
+      // Hide switch button by default, show only if ?type=switch
+      if (def.key === 'switch') {
+        return typeParam === 'switch';
       }
       // Hide rotate button by default, show only if ?type=rotate
       if (def.key === 'rotate') {
@@ -183,6 +189,7 @@ export class UIManager {
    */
   setupButtonCallbacks(callbacks: {
     onSkip: () => void;
+    onSwitch: () => void;
     onLeft: () => void;
     onRight: () => void;
     onDown: () => void;
@@ -201,6 +208,22 @@ export class UIManager {
       this.buttons.skip.on('pointerout', () => {
         // @ts-ignore
         this.buttons.skip!.clearTint();
+      });
+    }
+
+    if (this.buttons.switch) {
+      this.buttons.switch.on('pointerdown', () => {
+        // @ts-ignore
+        this.buttons.switch!.setTint(0xcccccc);
+        callbacks.onSwitch();
+      });
+      this.buttons.switch.on('pointerup', () => {
+        // @ts-ignore
+        this.buttons.switch!.clearTint();
+      });
+      this.buttons.switch.on('pointerout', () => {
+        // @ts-ignore
+        this.buttons.switch!.clearTint();
       });
     }
 

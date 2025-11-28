@@ -58,6 +58,7 @@ export class TetrisScene extends Phaser.Scene {
     
     // Load control buttons
     this.load.image('button_skip', '/images/button/skip.png');
+    this.load.image('button_switch', '/images/button/switch.png');
     this.load.image('button_left', '/images/button/left.png');
     this.load.image('button_right', '/images/button/right.png');
     this.load.image('button_down', '/images/button/down.png');
@@ -108,6 +109,7 @@ export class TetrisScene extends Phaser.Scene {
     // Setup button controls
     this.uiManager.setupButtonCallbacks({
       onSkip: () => this.skipCurrentBlock(),
+      onSwitch: () => this.switchCurrentBlock(),
       onLeft: () => this.moveLeft(),
       onRight: () => this.moveRight(),
       onDown: () => this.moveDown(),
@@ -410,6 +412,34 @@ export class TetrisScene extends Phaser.Scene {
 
     // Spawn next tetromino without locking
     this.spawnNextTetromino();
+  }
+
+  /**
+   * Switch current block with the next block in queue
+   */
+  private switchCurrentBlock(): void {
+    if (!this.currentTetromino || this.nextTetrominos.length === 0) return;
+
+    // Destroy current tetromino renderer
+    this.tetrominoRenderer.destroy();
+
+    // Get the first next tetromino
+    const nextTetromino = this.nextTetrominos.shift()!;
+
+    // Put current tetromino at the end of the queue
+    this.nextTetrominos.push(this.currentTetromino);
+
+    // Set the next tetromino as current, reset position to top
+    this.currentTetromino = {
+      ...nextTetromino,
+      x: Math.floor(4 - nextTetromino.shape.matrix[0].length / 2),
+      y: 0,
+      rotation: 0,
+      matrix: [...nextTetromino.shape.matrix.map(row => [...row])]
+    };
+
+    // Update next shape preview
+    this.updateNextShapePreview();
   }
 
   /**

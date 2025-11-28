@@ -16,6 +16,7 @@ export class TetrominoRenderer {
 
   /**
    * Render tetromino sebagai 1 complete image + text labels
+   * Uses outline image for active (falling) tetromino
    */
   renderTetromino(tetromino: Tetromino): Phaser.GameObjects.Container {
     // Destroy container lama jika ada
@@ -28,7 +29,8 @@ export class TetrominoRenderer {
 
     const matrix = tetromino.matrix;
     const originalMatrix = tetromino.shape.matrix;
-    const shapeKey = `shape_${tetromino.shape.shape_name}_color`;
+    // Use outline for active (falling) tetromino
+    const shapeKey = `shape_${tetromino.shape.shape_name}_outline`;
 
     // Hitung center berdasarkan actual filled tiles untuk akurasi
     const center = this.calculateTrueCenter(matrix, tetromino.x, tetromino.y);
