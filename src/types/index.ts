@@ -55,3 +55,14 @@ export enum Direction {
   RIGHT = 'RIGHT',
   DOWN = 'DOWN'
 }
+
+/**
+ * Data struktur dari gameplay_config.json
+ */
+export interface GameplayConfig {
+  type: string;
+  special_tag: string[];
+  play_area: string;
+  instruction_text: string;
+  instruction_text_color: string;
+}

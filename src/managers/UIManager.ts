@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GameConfig } from '../types';
+import { GameConfig, GameplayConfig } from '../types';
 
 /**
  * UIManager - Mengelola UI elements (background, panel, profile, buttons, next shape preview)
@@ -24,11 +24,11 @@ export class UIManager {
   /**
    * Setup semua UI elements
    */
-  setupUI(): void {
+  setupUI(gameplayConfig?: GameplayConfig | null): void {
     this.createBackground();
     this.createPlayAreaPanel();
-    this.createProfileSection();
-    this.createControlButtons();
+    this.createProfileSection(gameplayConfig);
+    this.createControlButtons(gameplayConfig);
   }
 
   /**
@@ -63,7 +63,7 @@ export class UIManager {
   /**
    * Create profile section (di atas play area)
    */
-  private createProfileSection(): void {
+  private createProfileSection(gameplayConfig?: GameplayConfig | null): void {
     // Profile placeholder di pojok kiri atas
     const profileX = 20;
     const profileY = 78;
@@ -109,15 +109,15 @@ export class UIManager {
     );
     instructionText1.setOrigin(0.5, 0);
 
-    // Text bagian ungu (Combine glowing block...)
+    // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
       centerX,
       instructionY + instructionText1.height + 8,
-      'Combine glowing block to make connection!',
+      gameplayConfig?.instruction_text || '',
       {
         fontFamily: 'Nunito',
         fontSize: '11px',
-        color: '#D14BFF',
+        color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
         align: 'center',
         wordWrap: { width: 340 }
@@ -130,16 +130,12 @@ export class UIManager {
    * Create control buttons di bawah play area
    * Menggunakan horizontal layout group system (seperti Unity)
    */
-  private createControlButtons(): void {
+  private createControlButtons(gameplayConfig?: GameplayConfig | null): void {
     const playAreaBottom = this.config.boardY + (this.config.gridHeight * this.config.tileSize);
     const centerX = 180;
     const buttonY = playAreaBottom + 50;
     const buttonSize = 70;
     const spacing = 15;
-
-    // Get query params
-    const urlParams = new URLSearchParams(window.location.search);
-    const typeParam = urlParams.get('type');
 
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [
@@ -151,21 +147,22 @@ export class UIManager {
       { key: 'right', texture: 'button_right' }
     ];
 
-    // Filter button yang aktif berdasarkan query param
+    // Filter button yang aktif berdasarkan special_tag dari gameplay config
     const activeButtons = buttonDefinitions.filter(def => {
-      // Hide skip button by default, show only for builder type
+      // Skip button untuk type dengan "skip" tag
       if (def.key === 'skip') {
-        return typeParam === 'builder';
+        return gameplayConfig?.special_tag.includes('skip');
       }
-      // Hide switch button by default, show only for adapter type
+      // Switch button untuk type dengan "switch" tag
       if (def.key === 'switch') {
-        return typeParam === 'adapter';
+        return gameplayConfig?.special_tag.includes('switch');
       }
-      // Hide rotate button by default, show only for innovator type
+      // Rotate button untuk type dengan "rotate" tag
       if (def.key === 'rotate') {
-        return typeParam === 'innovator';
+        return gameplayConfig?.special_tag.includes('rotate');
       }
-            return true;
+      // Prediction untuk type dengan "prediction" tag (ini handle di scene level)
+      return true;
     });
 
     // Hitung total width untuk centering

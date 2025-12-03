@@ -40,7 +40,6 @@ export const GAME_CONSTANTS = {
 
 export const ASSET_PATHS = {
   BACKGROUND: '/images/background.png',
-  PANEL: '/images/panel-play-area-purple.png',
   PROFILE: '/images/profile-placeholder.png',
   
   BUTTONS: {

@@ -1,139 +1,197 @@
 # WSG Tetris Game
 
-Game Tetris dengan tema WSG (Workforce Singapore) yang menampilkan skills labels pada setiap tetromino block.
+A Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation (360x720px) with an 8x9 grid system, featuring touch controls and multiple gameplay modes.
 
-## Struktur Project
+## Gameplay Modes
+
+The game supports 4 different gameplay modes via URL parameter `?type=<mode>`:
+
+### Explorer Mode (`?type=explorer`)
+- **Prediction System**: Shows optimal placement hints for tetrominos
+- **Smart AI**: Uses six-factor scoring algorithm to suggest best moves
+- **Visual Guidance**: Semi-transparent prediction overlays show where to place pieces
+
+### Builder Mode (`?type=builder`)
+- **Skip Function**: Skip current tetromino without locking
+- **Foundation Building**: Focus on perfect piece placement
+- **Skip Button**: Bypass unfittable pieces
+
+### Adapter Mode (`?type=adapter`)
+- **Switch Function**: Swap current tetromino with next one
+- **Flexibility Training**: Adapt to changing circumstances
+- **Switch Button**: Exchange current piece for better fit
+
+### Innovator Mode (`?type=innovator`)
+- **Enhanced Rotation**: Additional rotation controls
+- **Creative Problem-Solving**: Find innovative solutions
+- **Rotate Button**: Extended rotation capabilities
+
+## Project Structure
 
 ```
 wsg-tetris-game/
 ├── src/
-│   ├── config/
-│   │   └── constants.ts          # Game constants dan konfigurasi
 │   ├── managers/
-│   │   ├── ShapeManager.ts       # Handle shapes, random generation, rotation
-│   │   ├── TetrominoRenderer.ts  # Render tetromino dengan images dan text
+│   │   ├── ShapeManager.ts       # Shape data, random generation, rotation
+│   │   ├── TetrominoRenderer.ts  # Rendering with prediction system
 │   │   ├── GameBoard.ts          # Grid system, collision, line clearing
-│   │   └── UIManager.ts          # UI elements (background, buttons, etc)
+│   │   └── UIManager.ts          # Dynamic UI with mode-specific features
 │   ├── scenes/
-│   │   └── TetrisScene.ts        # Main game scene
+│   │   └── TetrisScene.ts        # Main game scene with mode handling
 │   ├── types/
-│   │   └── index.ts              # TypeScript interfaces dan types
+│   │   └── index.ts              # TypeScript interfaces including GameplayConfig
 │   └── main.ts                   # Entry point
 ├── public/
 │   ├── images/
-│   │   ├── background.png
-│   │   ├── panel-play-area-purple.png
-│   │   ├── profile-placeholder.png
-│   │   ├── button/               # Control buttons
-│   │   └── shapes/
-│   │       ├── colours/          # Colored shapes untuk gameplay
-│   │       └── outline/          # Outline shapes untuk preview
-│   ├── shape_data.json           # Data struktur setiap shape
-│   └── label_block.json          # Text labels untuk blocks
+│   │   ├── play_area/            # Mode-specific play area backgrounds
+│   │   ├── shapes/
+│   │   │   ├── colours/          # Active gameplay shapes
+│   │   │   ├── outline/          # Preview shapes
+│   │   │   └── prediction/       # Prediction overlay shapes
+│   │   └── button/               # Control buttons
+│   ├── shape_data.json           # Shape matrices and text positions
+│   ├── label_block.json          # Skills labels database
+│   └── gameplay_config.json      # Mode configurations and features
 └── index.html
-
 ```
 
-## Fitur
+## Features
 
-- **Portrait Mode**: Game dalam layout portrait (360x720)
-- **Grid System**: Play area 8x9 tiles (320x360 px)
-- **Shape dengan Labels**: Setiap tile menampilkan skill label
-- **Special Shapes S & Z**: Dapat menampilkan 2 kata (contoh: "Future Ready")
-- **Text Rotation**: Text mengikuti rotasi shape (kecuali 180° tetap 0°)
-- **Next Shape Preview**: Menggunakan outline images
-- **Touch Controls**: Button controls untuk mobile
+### Core Gameplay
+- **Portrait Mode**: Optimized for mobile (360x720px)
+- **Grid System**: 8×9 tiles (320x360px play area)
+- **Skill Labels**: Each tetromino displays workforce skills
+- **Smart Text**: S & Z shapes show two-word labels when available
+- **Text Rotation**: Follows shape rotation (180° stays upright)
+- **7-Shape Preview**: Horizontal preview with dynamic spacing
+- **Touch Controls**: Mobile-friendly button interface
 
-## Cara Menjalankan
+### Advanced Features
+- **Dynamic Play Areas**: Different backgrounds per gameplay mode
+- **Intelligent Prediction**: AI-powered placement suggestions
+- **Mode-Specific Controls**: Different buttons based on gameplay type
+- **Adaptive Instructions**: Context-sensitive help text
+- **Game-Over Prevention**: Prediction avoids dangerous placements
+- **Auto-Restart**: 3-second delay after game over
+
+## Getting Started
 
 ```bash
 # Install dependencies
 npm install
 
-# Run development server
+# Start development server (port 3000, auto-increments if occupied)
 npm run dev
 
-# Build untuk production
+# Build for production
 npm run build
+
+# Preview production build
+npm run preview
 ```
 
 ## Game Controls
 
-- **Left Button**: Gerakkan tetromino ke kiri
-- **Right Button**: Gerakkan tetromino ke kanan
-- **Down Button**: Percepat jatuh tetromino
-- **Rotate Button**: Rotate tetromino 90° clockwise
+### Standard Controls (All Modes)
+- **Left Button**: Move tetromino left
+- **Right Button**: Move tetromino right
+- **Down Button**: Speed up tetromino fall
 
-## Teknologi
+### Mode-Specific Controls
+- **Explorer Mode**: No additional buttons (prediction automatic)
+- **Builder Mode**: Skip button to bypass current piece
+- **Adapter Mode**: Switch button to swap with next piece
+- **Innovator Mode**: Rotate button for enhanced rotation
 
-- **Phaser 3**: Game framework
-- **TypeScript**: Programming language
-- **Vite**: Build tool dan dev server
-- **Google Fonts (Nunito)**: Typography
+### Debug Controls
+- **G Key**: Toggle gravity (auto-drop) for testing
 
-## Arsitektur Code
+## Configuration
 
-### Managers (src/managers/)
-
-1. **ShapeManager**: 
-   - Load shape data dari JSON
-   - Generate random tetromino dengan labels
-   - Handle rotation logic
-
-2. **TetrominoRenderer**:
-   - Render tetromino dengan images dan text
-   - Handle text rotation dengan rule khusus (180° = 0°)
-   - Render preview shapes
-
-3. **GameBoard**:
-   - Grid system 8x9
-   - Collision detection
-   - Line clearing dan scoring
-   - Lock tetromino ke board
-
-4. **UIManager**:
-   - Setup background, panel, profile
-   - Create dan manage control buttons
-   - Handle button interactions
-
-### Types (src/types/)
-
-- **ShapeData**: Struktur data shape dari JSON
-- **Tetromino**: Representasi active tetromino
-- **GameConfig**: Konfigurasi board dan positioning
-- **GridTile**: Representasi tile di board
-
-## Customization
-
-### Mengubah Drop Speed
-Edit di `TetrisScene.ts`:
-```typescript
-private dropInterval: number = 1000; // milliseconds
+### Gameplay Modes
+Edit `public/gameplay_config.json` to customize modes:
+```json
+[
+  {
+    "type": "explorer",
+    "special_tag": ["prediction"],
+    "play_area": "/images/play_area/explorer.png",
+    "instruction_text": "Follow the hints to find your perfect fit!",
+    "instruction_text_color": "#FD70FF"
+  }
+]
 ```
 
-### Mengubah Grid Size
-Edit di `TetrisScene.ts`:
+### Game Settings
+Modify game parameters in `TetrisScene.ts`:
 ```typescript
+private dropInterval: number = 1000; // Drop speed (ms)
 private config: GameConfig = {
   tileSize: 40,
   gridWidth: 8,
   gridHeight: 9,
-  ...
+  boardX: 20,
+  boardY: 230
 };
 ```
 
-### Menambah Labels Baru
-Edit `public/label_block.json`:
+### Labels Database
+Add new skills labels in `public/label_block.json`:
 ```json
 [
-  "New Label",
-  "Another Label",
-  ...
+  "Future Ready",
+  "Digital Skills",
+  "Problem Solving",
+  "Your New Label Here"
 ]
 ```
 
-## Notes
+## Technology Stack
 
-- Shape S dan Z secara otomatis menggunakan 2-word labels jika tersedia
-- Text rotation mengikuti shape rotation, kecuali pada 180° (tetap 0° agar tidak terbalik)
-- Game auto-restart setelah 3 detik dari game over
+- **Phaser 3**: Game framework and rendering engine
+- **TypeScript**: Type-safe development
+- **Vite**: Fast build tool and dev server
+- **Google Fonts (Nunito)**: Clean, readable typography
+
+## Architecture
+
+### Manager Pattern
+The game uses a modular manager architecture:
+
+1. **ShapeManager**: Handles shape data, random generation, and rotation logic
+2. **TetrominoRenderer**: Manages rendering, text rotation, and prediction system
+3. **GameBoard**: Controls grid system, collision detection, and piece locking
+4. **UIManager**: Manages dynamic UI, mode-specific buttons, and asset loading
+
+### Data Flow
+1. Load gameplay configuration based on URL parameter
+2. Initialize managers with shape and label data
+3. Generate tetrominos with skill labels
+4. Render with optional prediction overlays
+5. Handle user input and game state updates
+
+### Prediction Algorithm
+The explorer mode uses a sophisticated six-factor scoring system:
+- **Tile Coverage**: Immediate placement value
+- **Flatness**: Hole avoidance and surface smoothing
+- **Future Potential**: Next piece compatibility
+- **Height Preference**: Lower is better
+- **Edge Stability**: Wall hugging for structural integrity
+- **Line Completion**: High bonus for clearing lines
+
+## Development Notes
+
+- **Text Positioning**: Defined per-shape in `shape_data.json` as `[x, y]` offsets
+- **Dynamic Loading**: Play area images loaded based on gameplay mode
+- **Prediction Safety**: AI avoids suggesting game-over positions
+- **Mobile Optimized**: Touch controls and portrait layout
+- **Performance**: Efficient rendering with texture caching
+
+## Browser Support
+
+- Chrome/Chromium (recommended)
+- Firefox
+- Safari
+- Edge
+
+Mobile browsers supported with touch controls.

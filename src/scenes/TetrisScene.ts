@@ -3,7 +3,7 @@ import { ShapeManager } from '../managers/ShapeManager';
 import { TetrominoRenderer } from '../managers/TetrominoRenderer';
 import { GameBoard } from '../managers/GameBoard';
 import { UIManager } from '../managers/UIManager';
-import { Tetromino, ShapeData, GameConfig } from '../types';
+import { Tetromino, ShapeData, GameConfig, GameplayConfig } from '../types';
 
 /**
  * TetrisScene - Main game scene
@@ -23,13 +23,17 @@ export class TetrisScene extends Phaser.Scene {
   // Explorer mode (prediction)
   private isExplorerMode: boolean = false;
 
+  // Gameplay config
+  private gameplayConfigs: GameplayConfig[] = [];
+  private currentGameplayConfig: GameplayConfig | null = null;
+
   // Game config
   private config: GameConfig = {
     tileSize: 40,
     gridWidth: 8,
     gridHeight: 9,
     boardX: 20, // (360 - 320) / 2 untuk center horizontal
-    boardY: 250 // Posisi Y play area
+    boardY: 230 // Posisi Y play area
   };
 
   // Game timing
@@ -53,8 +57,7 @@ export class TetrisScene extends Phaser.Scene {
     // Load background
     this.load.image('background', '/images/background.png');
     
-    // Load panel play area
-    this.load.image('panel', '/images/panel-play-area-purple.png');
+    // Load panel play area - will be loaded dynamically after reading config
     
     // Load profile placeholder
     this.load.image('profile', '/images/profile-placeholder.png');
@@ -70,6 +73,7 @@ export class TetrisScene extends Phaser.Scene {
     // Load shape data JSON
     this.load.json('shapeData', '/shape_data.json');
     this.load.json('labelData', '/label_block.json');
+    this.load.json('gameplayConfig', '/gameplay_config.json');
     
     // Load shape images - color versions
     this.load.image('shape_i_color', '/images/shapes/colours/i.png');
@@ -109,44 +113,61 @@ export class TetrisScene extends Phaser.Scene {
     this.gameBoard = new GameBoard(this, this.config);
     this.uiManager = new UIManager(this, this.config);
 
-    // Load shape and label data
+    // Load shape, label, and gameplay data
     const shapeData = this.cache.json.get('shapeData') as ShapeData[];
     const labelData = this.cache.json.get('labelData') as string[];
+    const gameplayConfigData = this.cache.json.get('gameplayConfig') as GameplayConfig[];
+
     this.shapeManager.setShapeData(shapeData);
     this.shapeManager.setLabelData(labelData);
+    this.gameplayConfigs = gameplayConfigData;
 
-    // Setup UI
-    this.uiManager.setupUI();
-
-    // Check if explorer mode (show predictions)
+    // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const typeParam = urlParams.get('type');
-    this.isExplorerMode = typeParam === 'explorer';
+    const typeParam = urlParams.get('type') || 'explorer'; // Default to explorer
 
-    // Setup button controls
-    this.uiManager.setupButtonCallbacks({
-      onSkip: () => this.skipCurrentBlock(),
-      onSwitch: () => this.switchCurrentBlock(),
-      onLeft: () => this.moveLeft(),
-      onRight: () => this.moveRight(),
-      onDown: () => this.moveDown(),
-      onRotate: () => this.rotate()
+    // Find current gameplay config based on URL parameter
+    this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
+
+    // Load play area image dynamically if specified, otherwise use default
+    const playAreaPath = this.currentGameplayConfig?.play_area || '/images/panel-play-area-purple.png';
+
+    // Start the scene when image loading is complete
+    this.load.image('panel', playAreaPath);
+    this.load.start();
+
+    // Wait for loading to complete before setting up UI and starting game
+    this.load.once('complete', () => {
+      // Setup UI after image is loaded
+      this.uiManager.setupUI(this.currentGameplayConfig);
+
+      // Check if prediction mode based on special_tag
+      this.isExplorerMode = this.currentGameplayConfig?.special_tag.includes('prediction') || false;
+
+      // Setup button controls
+      this.uiManager.setupButtonCallbacks({
+        onSkip: () => this.skipCurrentBlock(),
+        onSwitch: () => this.switchCurrentBlock(),
+        onLeft: () => this.moveLeft(),
+        onRight: () => this.moveRight(),
+        onDown: () => this.moveDown(),
+        onRotate: () => this.rotate()
+      });
+
+      // Setup debug mode
+      if (this.debugMode) {
+        this.setupDebug();
+      }
+
+      // Setup keyboard for gravity toggle
+      this.input.keyboard?.on('keydown-G', () => {
+        this.isGameActive = !this.isGameActive;
+        console.log('Gravity:', this.isGameActive ? 'ON' : 'OFF');
+      });
+
+      // Start game
+      this.startGame();
     });
-
-
-    // Setup debug mode
-    if (this.debugMode) {
-      this.setupDebug();
-    }
-
-    // Setup keyboard for gravity toggle
-    this.input.keyboard?.on('keydown-G', () => {
-      this.isGameActive = !this.isGameActive;
-      console.log('Gravity:', this.isGameActive ? 'ON' : 'OFF');
-    });
-
-    // Start game
-    this.startGame();
   }
 
   /**
@@ -193,14 +214,7 @@ export class TetrisScene extends Phaser.Scene {
   private spawnNextTetromino(): void {
     // Ambil shape pertama dari queue
     this.currentTetromino = this.nextTetrominos.shift()!;
-
-    // Update position for spawning but maintain rotation and matrix
-    this.currentTetromino = {
-      ...this.currentTetromino,
-      x: Math.floor(4 - this.currentTetromino.matrix[0].length / 2),
-      y: 0
-    };
-
+    
     // Tambahkan shape baru di akhir queue
     this.nextTetrominos.push(this.shapeManager.generateRandomTetromino());
 
@@ -217,17 +231,6 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   /**
-   * Update prediction (only in explorer mode)
-   */
-  private updatePrediction(): void {
-    if (this.isExplorerMode && this.currentTetromino) {
-      this.tetrominoRenderer.renderPrediction(this.currentTetromino, this.gameBoard);
-    } else {
-      this.tetrominoRenderer.destroyPrediction();
-    }
-  }
-
-  /**
    * Update next shape preview (4 shapes horizontal, kanan ke kiri)
    */
   private updateNextShapePreview(): void {
@@ -235,7 +238,7 @@ export class TetrisScene extends Phaser.Scene {
     this.nextPreviewContainers.forEach(container => container.destroy());
     this.nextPreviewContainers = [];
 
-    // Create 4 previews horizontal (dari kanan ke kiri)
+    // Create 7 previews horizontal (dari kanan ke kiri)
     const startX = 300; // Start from right side
     const previewY = 185;
     const scale = 0.65;
@@ -266,6 +269,22 @@ export class TetrisScene extends Phaser.Scene {
           currentX -= (currentShapeWidth / 2) + baseSpacing + (nextShapeWidth / 2);
         }
       }
+    }
+  }
+
+  /**
+   * Update prediction (only in explorer mode)
+   */
+  private updatePrediction(): void {
+    if (this.isExplorerMode && this.currentTetromino) {
+      // Pass next tetrominos for optimal placement calculation
+      this.tetrominoRenderer.renderPrediction(
+        this.currentTetromino,
+        this.gameBoard,
+        this.nextTetrominos
+      );
+    } else {
+      this.tetrominoRenderer.destroyPrediction();
     }
   }
 
@@ -436,11 +455,6 @@ export class TetrisScene extends Phaser.Scene {
   private rotate(): void {
     if (!this.currentTetromino) return;
 
-    // O shape doesn't need rotation (it's a square)
-    if (this.currentTetromino.shape.shape_name === 'o') {
-      return;
-    }
-
     const rotatedTetromino = this.shapeManager.rotateTetromino(this.currentTetromino);
     if (this.gameBoard.canPlace(rotatedTetromino)) {
       this.currentTetromino = rotatedTetromino;
@@ -476,18 +490,17 @@ export class TetrisScene extends Phaser.Scene {
     // Put current tetromino at the end of the queue
     this.nextTetrominos.push(this.currentTetromino);
 
-    // Set the next tetromino as current, maintain rotation but reset position to top
+    // Set the next tetromino as current, reset position to top
     this.currentTetromino = {
       ...nextTetromino,
-      x: Math.floor(4 - nextTetromino.matrix[0].length / 2),
-      y: 0
+      x: Math.floor(4 - nextTetromino.shape.matrix[0].length / 2),
+      y: 0,
+      rotation: 0,
+      matrix: [...nextTetromino.shape.matrix.map(row => [...row])]
     };
 
     // Update next shape preview
     this.updateNextShapePreview();
-
-    // Update prediction for switched tetromino
-    this.updatePrediction();
   }
 
   /**
