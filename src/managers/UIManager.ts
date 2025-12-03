@@ -66,7 +66,7 @@ export class UIManager {
   private createProfileSection(): void {
     // Profile placeholder di pojok kiri atas
     const profileX = 20;
-    const profileY = 90;
+    const profileY = 78;
     const profileSize = 40;
 
     const profile = this.scene.add.image(profileX, profileY, 'profile');
@@ -133,7 +133,7 @@ export class UIManager {
   private createControlButtons(): void {
     const playAreaBottom = this.config.boardY + (this.config.gridHeight * this.config.tileSize);
     const centerX = 180;
-    const buttonY = playAreaBottom + 60;
+    const buttonY = playAreaBottom + 50;
     const buttonSize = 70;
     const spacing = 15;
 
@@ -153,19 +153,19 @@ export class UIManager {
 
     // Filter button yang aktif berdasarkan query param
     const activeButtons = buttonDefinitions.filter(def => {
-      // Hide skip button by default, show only if ?type=skip
+      // Hide skip button by default, show only for builder type
       if (def.key === 'skip') {
-        return typeParam === 'skip';
+        return typeParam === 'builder';
       }
-      // Hide switch button by default, show only if ?type=switch
+      // Hide switch button by default, show only for adapter type
       if (def.key === 'switch') {
-        return typeParam === 'switch';
+        return typeParam === 'adapter';
       }
-      // Hide rotate button by default, show only if ?type=rotate
+      // Hide rotate button by default, show only for innovator type
       if (def.key === 'rotate') {
-        return typeParam === 'rotate';
+        return typeParam === 'innovator';
       }
-      return true;
+            return true;
     });
 
     // Hitung total width untuk centering

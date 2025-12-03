@@ -8,6 +8,8 @@ export class TetrominoRenderer {
   private scene: Phaser.Scene;
   private config: GameConfig;
   private container: Phaser.GameObjects.Container | null = null;
+  private predictionContainer: Phaser.GameObjects.Container | null = null;
+  private predictionImage: Phaser.GameObjects.Image | null = null;
 
   constructor(scene: Phaser.Scene, config: GameConfig) {
     this.scene = scene;
@@ -56,15 +58,16 @@ export class TetrominoRenderer {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        center.x + rotatedOffset.x,
-        center.y + rotatedOffset.y,
+        Math.round(center.x + rotatedOffset.x),
+        Math.round(center.y + rotatedOffset.y),
         label,
         {
           fontFamily: 'Nunito',
           fontSize: '13px',
           color: '#FFFFFF',
           align: 'center',
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          resolution: 2
         }
       );
       text.setOrigin(0.5);
@@ -123,11 +126,15 @@ export class TetrominoRenderer {
 
   /**
    * Get text rotation berdasarkan shape rotation
-   * Rule: Jika shape rotate 180°, text tetap 0° (tidak terbalik)
+   * Rule: Text hanya rotate 0° atau 90° untuk readability
    */
   private getTextRotation(shapeRotation: number): number {
-    if (shapeRotation === 180) {
-      return 0; // Tidak terbalik
+    if (shapeRotation === 0 || shapeRotation === 360) {
+      return 0;
+    } else if (shapeRotation === 90 || shapeRotation === 270) {
+      return 90;
+    } else if (shapeRotation === 180) {
+      return 0; // 180° tetap 0° agar tidak terbalik
     }
     return shapeRotation;
   }
@@ -137,39 +144,48 @@ export class TetrominoRenderer {
    */
   renderPreview(tetromino: Tetromino, x: number, y: number, scale: number = 1, useColor: boolean = false): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
-    const matrix = tetromino.shape.matrix; // Gunakan matrix original (tidak rotated)
-    const shapeKey = useColor 
+
+    // Use the original matrix for image dimensions (avoid stretching)
+    const originalMatrix = tetromino.shape.matrix;
+    const shapeKey = useColor
       ? `shape_${tetromino.shape.shape_name}_color`
       : `shape_${tetromino.shape.shape_name}_outline`;
 
-    // Ukuran original shape
-    const originalWidth = matrix[0].length * this.config.tileSize;
-    const originalHeight = matrix.length * this.config.tileSize;
+    // Ukuran original shape (sebelum rotation) untuk image
+    const originalWidth = originalMatrix[0].length * this.config.tileSize;
+    const originalHeight = originalMatrix.length * this.config.tileSize;
 
-    // Render complete shape image
+    // Render complete shape image WITH rotation (show actual spawn rotation)
     const image = this.scene.add.image(0, 0, shapeKey);
     image.setDisplaySize(originalWidth * scale, originalHeight * scale);
+    image.setAngle(tetromino.rotation); // Show the actual rotation
     container.add(image);
 
-    // Render text labels (scaled)
+    // Render text labels WITH rotation (show actual spawn rotation)
+    const textRotation = this.getTextRotation(tetromino.rotation);
+
     for (let i = 0; i < tetromino.shape.text_position.length; i++) {
       const [offsetX, offsetY] = tetromino.shape.text_position[i];
       const label = tetromino.labels[i] || tetromino.labels[0];
 
+      // Rotate offset position sesuai shape rotation
+      const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
+
       const text = this.scene.add.text(
-        offsetX * scale,
-        offsetY * scale,
+        Math.round(rotatedOffset.x * scale),
+        Math.round(rotatedOffset.y * scale),
         label,
         {
           fontFamily: 'Nunito',
           fontSize: `${Math.floor(13 * scale)}px`,
           color: '#FFFFFF',
           align: 'center',
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          resolution: 2
         }
       );
       text.setOrigin(0.5);
-
+      text.setAngle(textRotation); // Show the actual text rotation
       container.add(text);
     }
 
@@ -183,6 +199,64 @@ export class TetrominoRenderer {
     if (this.container) {
       this.container.destroy();
       this.container = null;
+    }
+  }
+
+  /**
+   * Render prediction shape showing where tetromino will land
+   */
+  renderPrediction(tetromino: Tetromino, gameBoard: any): void {
+    // Destroy existing prediction
+    this.destroyPrediction();
+
+    // Calculate landing position
+    const landingPosition = this.calculateLandingPosition(tetromino, gameBoard);
+
+    const originalMatrix = tetromino.shape.matrix;
+    const shapeKey = `shape_${tetromino.shape.shape_name}_prediction`;
+
+    // Ukuran original shape (sebelum rotation) untuk image display
+    const originalWidth = originalMatrix[0].length * this.config.tileSize;
+    const originalHeight = originalMatrix.length * this.config.tileSize;
+
+    // Hitung center berdasarkan actual filled tiles untuk akurasi
+    const center = this.calculateTrueCenter(tetromino.matrix, landingPosition.x, landingPosition.y);
+
+    // Render prediction shape image with rotation - NO TEXT
+    this.predictionImage = this.scene.add.image(center.x, center.y, shapeKey);
+    this.predictionImage.setDisplaySize(originalWidth, originalHeight);
+    this.predictionImage.setAngle(tetromino.rotation);
+    this.predictionImage.setAlpha(0.2); // Constant 20% opacity
+  }
+
+  /**
+   * Calculate where tetromino will land
+   */
+  private calculateLandingPosition(tetromino: Tetromino, gameBoard: any): { x: number; y: number } {
+    let testY = tetromino.y;
+
+    // Keep moving down until collision
+    while (gameBoard.canPlace({ ...tetromino, y: testY + 1 })) {
+      testY++;
+    }
+
+    return { x: tetromino.x, y: testY };
+  }
+
+  /**
+   * Destroy prediction elements
+   */
+  destroyPrediction(): void {
+    // Destroy prediction image
+    if (this.predictionImage) {
+      this.predictionImage.destroy();
+      this.predictionImage = null;
+    }
+
+    // Destroy prediction container (for backward compatibility)
+    if (this.predictionContainer) {
+      this.predictionContainer.destroy();
+      this.predictionContainer = null;
     }
   }
 

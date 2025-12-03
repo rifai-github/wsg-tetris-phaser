@@ -25,18 +25,34 @@ export class ShapeManager {
   }
 
   /**
-   * Generate random tetromino
+   * Generate random tetromino with random rotation
    */
   generateRandomTetromino(): Tetromino {
     const randomShape = this.getRandomShape();
     const labels = this.getLabelsForShape(randomShape);
 
+    // Generate random rotation (0, 90, 180, 270)
+    const rotations = [0, 90, 180, 270];
+    const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
+
+    // Skip rotation for O shape since it doesn't need it
+    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+
+    // Apply rotation to matrix if needed
+    let matrix = this.cloneMatrix(randomShape.matrix);
+    let currentRotation = finalRotation;
+
+    // Rotate matrix to match the rotation angle
+    for (let i = 0; i < (finalRotation / 90); i++) {
+      matrix = this.rotateMatrix(matrix);
+    }
+
     return {
       shape: randomShape,
-      x: Math.floor(4 - randomShape.matrix[0].length / 2), // Center horizontal
+      x: Math.floor(4 - matrix[0].length / 2), // Center horizontal based on rotated matrix
       y: 0,
-      rotation: 0,
-      matrix: this.cloneMatrix(randomShape.matrix),
+      rotation: finalRotation,
+      matrix: matrix,
       labels: labels
     };
   }

@@ -3,6 +3,7 @@
         "shape_name": "i",
         "outline_path": "/images/shapes/outline/i.png",
         "color_path": "/images/shapes/colours/i.png",
+        "prediction_path": "/images/shapes/prediction/i.png",
         "text_position": [
             [0, 0]
         ],
@@ -14,6 +15,7 @@
         "shape_name": "j",
         "outline_path": "/images/shapes/outline/j.png",
         "color_path": "/images/shapes/colours/j.png",
+        "prediction_path": "/images/shapes/prediction/j.png",
         "text_position": [
             [0, 20]
         ],
@@ -26,6 +28,7 @@
         "shape_name": "l",
         "outline_path": "/images/shapes/outline/l.png",
         "color_path": "/images/shapes/colours/l.png",
+        "prediction_path": "/images/shapes/prediction/l.png",
         "text_position": [
             [0, 20]
         ],
@@ -38,6 +41,7 @@
         "shape_name": "o",
         "outline_path": "/images/shapes/outline/o.png",
         "color_path": "/images/shapes/colours/o.png",
+        "prediction_path": "/images/shapes/prediction/o.png",
         "text_position": [
             [0, 0]
         ],
@@ -50,6 +54,7 @@
         "shape_name": "s",
         "outline_path": "/images/shapes/outline/s.png",
         "color_path": "/images/shapes/colours/s.png",
+        "prediction_path": "/images/shapes/prediction/s.png",
         "text_position": [
             [15, -20],
             [-15, 20]
@@ -63,6 +68,7 @@
         "shape_name": "t",
         "outline_path": "/images/shapes/outline/t.png",
         "color_path": "/images/shapes/colours/t.png",
+        "prediction_path": "/images/shapes/prediction/t.png",
         "text_position": [
             [0, -20]
         ],
@@ -75,6 +81,7 @@
         "shape_name": "z",
         "outline_path": "/images/shapes/outline/z.png",
         "color_path": "/images/shapes/colours/z.png",
+        "prediction_path": "/images/shapes/prediction/z.png",
         "text_position": [
             [-15, -20],
             [15, 20]

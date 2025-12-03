@@ -9,6 +9,7 @@ export interface ShapeData {
   shape_name: string;
   outline_path: string;
   color_path: string;
+  prediction_path: string; // Path untuk prediction image
   text_position: number[][]; // Array of [x, y] offsets untuk text placement
   matrix: number[][];
 }

@@ -90,15 +90,16 @@ export class GameBoard {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        center.x + rotatedOffset.x,
-        center.y + rotatedOffset.y,
+        Math.round(center.x + rotatedOffset.x),
+        Math.round(center.y + rotatedOffset.y),
         label,
         {
           fontFamily: 'Nunito',
           fontSize: '13px',
           color: '#FFFFFF',
           align: 'center',
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          resolution: 2
         }
       );
       text.setOrigin(0.5);
@@ -142,10 +143,15 @@ export class GameBoard {
 
   /**
    * Get text rotation (sama seperti TetrominoRenderer)
+   * Rule: Text hanya rotate 0° atau 90° untuk readability
    */
   private getTextRotation(shapeRotation: number): number {
-    if (shapeRotation === 180) {
+    if (shapeRotation === 0 || shapeRotation === 360) {
       return 0;
+    } else if (shapeRotation === 90 || shapeRotation === 270) {
+      return 90;
+    } else if (shapeRotation === 180) {
+      return 0; // 180° tetap 0° agar tidak terbalik
     }
     return shapeRotation;
   }
