@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { TetrisScene } from './scenes/TetrisScene';
+import { GAME_CONSTANTS } from './config/constants';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 360,
-  height: 720,
-  backgroundColor: '#2a2a3e',
+  width: GAME_CONSTANTS.CANVAS_WIDTH,
+  height: GAME_CONSTANTS.CANVAS_HEIGHT,
+  backgroundColor: GAME_CONSTANTS.BACKGROUND_COLOR,
   scene: [TetrisScene],
   scale: {
     mode: Phaser.Scale.FIT,

@@ -4,6 +4,7 @@ import { TetrominoRenderer } from '../managers/TetrominoRenderer';
 import { GameBoard } from '../managers/GameBoard';
 import { UIManager } from '../managers/UIManager';
 import { Tetromino, ShapeData, GameConfig, GameplayConfig } from '../types';
+import { GAME_CONSTANTS, ASSET_PATHS } from '../config/constants';
 
 /**
  * TetrisScene - Main game scene
@@ -29,17 +30,19 @@ export class TetrisScene extends Phaser.Scene {
 
   // Game config
   private config: GameConfig = {
-    tileSize: 40,
-    gridWidth: 8,
-    gridHeight: 9,
-    boardX: 20, // (360 - 320) / 2 untuk center horizontal
-    boardY: 230 // Posisi Y play area
+    tileSize: GAME_CONSTANTS.TILE_SIZE,
+    gridWidth: GAME_CONSTANTS.GRID_WIDTH,
+    gridHeight: GAME_CONSTANTS.GRID_HEIGHT,
+    boardX: GAME_CONSTANTS.BOARD_X,
+    boardY: GAME_CONSTANTS.BOARD_Y
   };
 
   // Game timing
   private dropTimer: number = 0;
-  private dropInterval: number = 1000; // 1 detik
+  private dropInterval: number = GAME_CONSTANTS.DROP_INTERVAL;
   private isGameActive: boolean = false;
+  private gameTimer: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
+  private constGameTime: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
 
   // Debug
   private debugMode: boolean = false;
@@ -55,52 +58,57 @@ export class TetrisScene extends Phaser.Scene {
    */
   preload(): void {
     // Load background
-    this.load.image('background', '/images/background.png');
-    
+    this.load.image('background', ASSET_PATHS.BACKGROUND);
+
     // Load panel play area - will be loaded dynamically after reading config
-    
+
     // Load profile placeholder
-    this.load.image('profile', '/images/profile-placeholder.png');
-    
+    this.load.image('profile', ASSET_PATHS.PROFILE);
+
     // Load control buttons
-    this.load.image('button_skip', '/images/button/skip.png');
-    this.load.image('button_switch', '/images/button/switch.png');
-    this.load.image('button_left', '/images/button/left.png');
-    this.load.image('button_right', '/images/button/right.png');
-    this.load.image('button_down', '/images/button/down.png');
-    this.load.image('button_rotate', '/images/button/rotate.png');
-    
+    this.load.image('button_skip', ASSET_PATHS.BUTTONS.SKIP);
+    this.load.image('button_switch', ASSET_PATHS.BUTTONS.SWITCH);
+    this.load.image('button_left', ASSET_PATHS.BUTTONS.LEFT);
+    this.load.image('button_right', ASSET_PATHS.BUTTONS.RIGHT);
+    this.load.image('button_down', ASSET_PATHS.BUTTONS.DOWN);
+    this.load.image('button_rotate', ASSET_PATHS.BUTTONS.ROTATE);
+
     // Load shape data JSON
-    this.load.json('shapeData', '/shape_data.json');
-    this.load.json('labelData', '/label_block.json');
-    this.load.json('gameplayConfig', '/gameplay_config.json');
-    
+    this.load.json('shapeData', ASSET_PATHS.DATA.SHAPES);
+    this.load.json('labelData', ASSET_PATHS.DATA.LABELS);
+    this.load.json('gameplayConfig', ASSET_PATHS.DATA.GAMEPLAY_CONFIG);
+
     // Load shape images - color versions
-    this.load.image('shape_i_color', '/images/shapes/colours/i.png');
-    this.load.image('shape_j_color', '/images/shapes/colours/j.png');
-    this.load.image('shape_l_color', '/images/shapes/colours/l.png');
-    this.load.image('shape_o_color', '/images/shapes/colours/o.png');
-    this.load.image('shape_s_color', '/images/shapes/colours/s.png');
-    this.load.image('shape_t_color', '/images/shapes/colours/t.png');
-    this.load.image('shape_z_color', '/images/shapes/colours/z.png');
-    
+    this.load.image('shape_i_color', ASSET_PATHS.SHAPES_COLOR.I);
+    this.load.image('shape_j_color', ASSET_PATHS.SHAPES_COLOR.J);
+    this.load.image('shape_l_color', ASSET_PATHS.SHAPES_COLOR.L);
+    this.load.image('shape_o_color', ASSET_PATHS.SHAPES_COLOR.O);
+    this.load.image('shape_s_color', ASSET_PATHS.SHAPES_COLOR.S);
+    this.load.image('shape_t_color', ASSET_PATHS.SHAPES_COLOR.T);
+    this.load.image('shape_z_color', ASSET_PATHS.SHAPES_COLOR.Z);
+
     // Load shape images - outline versions
-    this.load.image('shape_i_outline', '/images/shapes/outline/i.png');
-    this.load.image('shape_j_outline', '/images/shapes/outline/j.png');
-    this.load.image('shape_l_outline', '/images/shapes/outline/l.png');
-    this.load.image('shape_o_outline', '/images/shapes/outline/o.png');
-    this.load.image('shape_s_outline', '/images/shapes/outline/s.png');
-    this.load.image('shape_t_outline', '/images/shapes/outline/t.png');
-    this.load.image('shape_z_outline', '/images/shapes/outline/z.png');
+    this.load.image('shape_i_outline', ASSET_PATHS.SHAPES_OUTLINE.I);
+    this.load.image('shape_j_outline', ASSET_PATHS.SHAPES_OUTLINE.J);
+    this.load.image('shape_l_outline', ASSET_PATHS.SHAPES_OUTLINE.L);
+    this.load.image('shape_o_outline', ASSET_PATHS.SHAPES_OUTLINE.O);
+    this.load.image('shape_s_outline', ASSET_PATHS.SHAPES_OUTLINE.S);
+    this.load.image('shape_t_outline', ASSET_PATHS.SHAPES_OUTLINE.T);
+    this.load.image('shape_z_outline', ASSET_PATHS.SHAPES_OUTLINE.Z);
 
     // Load shape images - prediction versions
-    this.load.image('shape_i_prediction', '/images/shapes/prediction/i.png');
-    this.load.image('shape_j_prediction', '/images/shapes/prediction/j.png');
-    this.load.image('shape_l_prediction', '/images/shapes/prediction/l.png');
-    this.load.image('shape_o_prediction', '/images/shapes/prediction/o.png');
-    this.load.image('shape_s_prediction', '/images/shapes/prediction/s.png');
-    this.load.image('shape_t_prediction', '/images/shapes/prediction/t.png');
-    this.load.image('shape_z_prediction', '/images/shapes/prediction/z.png');
+    this.load.image('shape_i_prediction', ASSET_PATHS.SHAPES_PREDICTION.I);
+    this.load.image('shape_j_prediction', ASSET_PATHS.SHAPES_PREDICTION.J);
+    this.load.image('shape_l_prediction', ASSET_PATHS.SHAPES_PREDICTION.L);
+    this.load.image('shape_o_prediction', ASSET_PATHS.SHAPES_PREDICTION.O);
+    this.load.image('shape_s_prediction', ASSET_PATHS.SHAPES_PREDICTION.S);
+    this.load.image('shape_t_prediction', ASSET_PATHS.SHAPES_PREDICTION.T);
+    this.load.image('shape_z_prediction', ASSET_PATHS.SHAPES_PREDICTION.Z);
+
+    // Load slider assets
+    this.load.image('slider_background', ASSET_PATHS.SLIDER.BACKGROUND);
+    this.load.image('slider_progress', ASSET_PATHS.SLIDER.PROGRESS);
+    this.load.image('slider_handling', ASSET_PATHS.SLIDER.HANDLING);
   }
 
   /**
@@ -130,7 +138,7 @@ export class TetrisScene extends Phaser.Scene {
     this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
 
     // Load play area image dynamically if specified, otherwise use default
-    const playAreaPath = this.currentGameplayConfig?.play_area || '/images/panel-play-area-purple.png';
+    const playAreaPath = this.currentGameplayConfig?.play_area || ASSET_PATHS.DEFAULT_PLAY_AREA;
 
     // Start the scene when image loading is complete
     this.load.image('panel', playAreaPath);
@@ -194,6 +202,9 @@ export class TetrisScene extends Phaser.Scene {
     this.gameBoard.reset();
     this.isGameActive = true;
     this.dropTimer = 0;
+    this.gameTimer = this.constGameTime; // Reset countdown timer
+    this.uiManager.updateTimer(this.gameTimer); // Update timer display
+    this.uiManager.updateSlider(this.gameTimer, this.constGameTime); // Update slider display
 
     // Generate 7 next tetrominos
     this.nextTetrominos = [];
@@ -239,10 +250,17 @@ export class TetrisScene extends Phaser.Scene {
     this.nextPreviewContainers = [];
 
     // Create 7 previews horizontal (dari kanan ke kiri)
-    const startX = 300; // Start from right side
-    const previewY = 185;
-    const scale = 0.65;
-    const baseSpacing = 15; // Base spacing between shapes
+    // Align right edge of first shape with right side of play area
+    const maxTetrominoHeight = GAME_CONSTANTS.MAX_TETROMINO_HEIGHT;
+    const scale = GAME_CONSTANTS.PREVIEW_SCALE;
+    const baseSpacing = this.config.tileSize * scale * GAME_CONSTANTS.PREVIEW_BASE_SPACING_MULTIPLIER;
+    const playAreaRight = this.config.boardX + GAME_CONSTANTS.PLAY_AREA_WIDTH;
+    const firstShapeWidth = this.nextTetrominos[0].matrix[0].length * this.config.tileSize * scale;
+    const startX = playAreaRight - (firstShapeWidth / 2); // Position so right edge aligns
+
+    // Calculate preview Y position: play area top - spacing - (max tetromino height * tileSize * scale / 2)
+    // This positions the center so the bottom is spacing from play area top
+    const previewY = this.config.boardY - GAME_CONSTANTS.TETROMINO_DISTANCE_FROM_PLAY_AREA - (maxTetrominoHeight * this.config.tileSize * scale / 2);
 
     let currentX = startX;
 
@@ -294,6 +312,17 @@ export class TetrisScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (!this.currentTetromino) {
       return;
+    }
+
+    // Update game timer (countdown)
+    if (this.isGameActive) {
+      this.gameTimer -= delta / 1000; // Convert to seconds and countdown
+      if (this.gameTimer <= 0) {
+        this.gameTimer = 0;
+        this.gameOver(); // Time's up!
+      }
+      this.uiManager.updateTimer(Math.ceil(this.gameTimer)); // Show ceiling for better UX
+      this.uiManager.updateSlider(Math.ceil(this.gameTimer), this.constGameTime); // Update slider progress
     }
 
     // Auto drop tetromino (only if gravity active)
@@ -476,31 +505,35 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   /**
-   * Switch current block with the next block in queue
+   * Switch current block shape to a random tetromino
    */
   private switchCurrentBlock(): void {
-    if (!this.currentTetromino || this.nextTetrominos.length === 0) return;
+    if (!this.currentTetromino) return;
 
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
 
-    // Get the first next tetromino
-    const nextTetromino = this.nextTetrominos.shift()!;
+    // Generate a random tetromino shape
+    const randomTetromino = this.shapeManager.generateRandomTetromino();
 
-    // Put current tetromino at the end of the queue
-    this.nextTetrominos.push(this.currentTetromino);
+    // Transform current tetromino to the new random shape, preserving position and rotation
+    // Apply the current rotation to the new shape
+    let rotatedMatrix = randomTetromino.shape.matrix;
+    for (let i = 0; i < this.currentTetromino.rotation / 90; i++) {
+      rotatedMatrix = this.shapeManager.rotateMatrix(rotatedMatrix);
+    }
 
-    // Set the next tetromino as current, reset position to top
     this.currentTetromino = {
-      ...nextTetromino,
-      x: Math.floor(4 - nextTetromino.shape.matrix[0].length / 2),
-      y: 0,
-      rotation: 0,
-      matrix: [...nextTetromino.shape.matrix.map(row => [...row])]
+      shape: randomTetromino.shape,
+      x: this.currentTetromino.x,
+      y: this.currentTetromino.y,
+      rotation: this.currentTetromino.rotation,
+      matrix: rotatedMatrix,
+      labels: this.currentTetromino.labels // Keep the same labels
     };
 
-    // Update next shape preview
-    this.updateNextShapePreview();
+    // Update prediction for new tetromino shape
+    this.updatePrediction();
   }
 
   /**

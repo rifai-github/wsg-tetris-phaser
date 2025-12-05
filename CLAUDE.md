@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation (360x720px) with an 8x9 grid system, featuring touch controls and skill-themed gameplay with multiple gameplay modes.
+WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation (393x852px) with an 8x9 grid system (44px tiles), featuring touch controls, countdown timer with slider, and skill-themed gameplay with multiple gameplay modes.
 
 ## Development Commands
 
@@ -53,7 +53,7 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - Uses prediction-specific textures: `/images/shapes/prediction/*.png`
 
 **GameBoard** ([GameBoard.ts](src/managers/GameBoard.ts))
-- Manages 8x9 grid system
+- Manages 8x9 grid system with 44px tiles
 - Collision detection and boundary checking
 - Locks tetrominos permanently to the board with rotated text labels
 - Line clearing (disabled by default but implemented)
@@ -62,6 +62,8 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 **UIManager** ([UIManager.ts](src/managers/UIManager.ts))
 - Renders background, panel, and profile elements
 - Creates interactive control buttons filtered by gameplay mode
+- Manages countdown timer with color warnings and slider progress indicator
+- Dynamic slider component with quarters-based progress display
 - Manages button callbacks and touch interactions
 - Dynamically loads play area images and instruction text based on gameplay config
 
@@ -73,11 +75,17 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 4. ShapeManager generates Tetromino objects with labels
 5. TetrominoRenderer displays active piece (temporary) with optional prediction overlay
 6. GameBoard locks pieces permanently on collision
-7. Next 7 shapes previewed horizontally (rightmost uses color, others use outline)
+7. Next 7 shapes previewed horizontally (right edge aligns with play area right edge)
 
 ### Key Game Mechanics
 
-**Grid System**: 8 columns × 9 rows, 40px tiles, positioned at (20, 230)
+**Grid System**: 8 columns × 9 rows, 44px tiles, positioned at (20, 319)
+
+**Screen Resolution**: 393x852px portrait mode with 353x397px play area
+
+**Timer System**: 10-second countdown with color warnings (white → orange → red)
+
+**Progress Slider**: Real-time slider showing timer progress in quarters format ("Progress X/4")
 
 **Shape Rotation**: Text follows shape rotation except at 180° (remains at 0° for readability)
 
@@ -104,10 +112,21 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - `instruction_text_color`: RGB hex color for instruction text
 
 ### Key Constants
-- `TILE_SIZE`: 40px
+- `TILE_SIZE`: 44px
 - `GRID_WIDTH`: 8, `GRID_HEIGHT`: 9
-- `DROP_INTERVAL`: 1000ms (modify in TetrisScene.ts:34)
+- `CANVAS_WIDTH`: 393px, `CANVAS_HEIGHT`: 852px
+- `PLAY_AREA_WIDTH`: 353px, `PLAY_AREA_HEIGHT`: 397px
+- `BOARD_X`: 20px, `BOARD_Y`: 319px
+- `COUNTDOWN_DURATION`: 10 seconds
+- `DROP_INTERVAL`: 1000ms
 - `FONT_FAMILY`: 'Nunito' (loaded from Google Fonts)
+
+### Asset Management
+All asset paths centralized in [`constants.ts`](src/config/constants.ts):
+- **UI Assets**: Background, profile, play area panels
+- **Button Assets**: Skip, switch, rotate, movement controls
+- **Shape Assets**: Color, outline, and prediction versions for all 7 tetrominos
+- **Slider Assets**: Progress bar background, fill indicator, and handle/thumb
 
 ## Important Implementation Details
 
@@ -117,6 +136,13 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - `/images/shapes/colours/*.png` - Used for active and locked blocks
 - `/images/shapes/outline/*.png` - Used for next shape previews (except first)
 - `/images/shapes/prediction/*.png` - Used for prediction overlays (explorer mode)
+
+**Slider Component**: Progress tracking with rounded appearance:
+- Background bar: 164x10px positioned at right side of profile section
+- Handle/thumb: 40x40px sliding along progress bar
+- Progress fill: Uses `progress.png` with dynamic masking for rounded appearance
+- Progress text: "Progress X/4" format, right-aligned above slider
+- Follows countdown timer (0 at start, 1 at finish)
 
 **Text Positioning**: Defined per-shape in shape_data.json as `[x, y]` offsets from shape center. S and Z shapes have two positions for two-word labels.
 
@@ -132,7 +158,17 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 
 **Game-Over Prevention**: Prediction system avoids suggesting placements in top row to prevent instant game over.
 
-**Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:38 to see grid lines, bounding boxes, and shape info.
+**Shape Preview Positioning**: 7 tetrominos previewed horizontally to the left of the play area. Right edge of first shape aligns with play area right edge. First shape uses color rendering, others use outline.
+
+**Timer System**: 10-second countdown with visual warnings:
+- 10-30 seconds: White text
+- 1-10 seconds: Orange warning
+- 0 seconds: Red urgent
+- Auto game over when timer reaches 0
+
+**Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:47 to see grid lines, bounding boxes, and shape info.
+
+**Text Rendering**: All text elements use 2x resolution (`setResolution(2)`) for sharp, clear display with enhanced shadow effects for improved readability.
 
 ## TypeScript Types
 
@@ -151,3 +187,14 @@ Vite config uses:
 - Port 3000 for dev server (auto-increments if occupied)
 - TypeScript with strict mode enabled
 - ES2020 target with CommonJS modules
+
+## Text Rendering Enhancements
+
+All UI text elements utilize 2x resolution rendering (`setResolution(2)`) for crisp, sharp display quality:
+- **Timer Display**: Countdown timer with enhanced clarity
+- **Instruction Text**: Mode-specific instructions with shadow effects
+- **Progress Slider**: Progress text with sharp rendering
+- **Profile Section**: Username display with high definition
+- **Debug Text**: Development information with clear visibility
+
+Text elements include enhanced shadow effects with 1px offset, 2px blur, and proper padding for optimal readability against game backgrounds.
