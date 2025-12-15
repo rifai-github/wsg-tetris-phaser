@@ -480,8 +480,10 @@ export class TetrisScene extends Phaser.Scene {
       }
     }
 
-    // Render current tetromino
-    this.tetrominoRenderer.renderTetromino(this.currentTetromino);
+    // Render current tetromino (only if game is active)
+    if (this.isGameActive) {
+      this.tetrominoRenderer.renderTetromino(this.currentTetromino);
+    }
 
     // Debug rendering
     if (this.debugMode) {
@@ -586,7 +588,7 @@ export class TetrisScene extends Phaser.Scene {
    * Move tetromino left
    */
   private moveLeft(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     const newTetromino = { ...this.currentTetromino, x: this.currentTetromino.x - 1 };
     if (this.gameBoard.canPlace(newTetromino)) {
@@ -599,7 +601,7 @@ export class TetrisScene extends Phaser.Scene {
    * Move tetromino right
    */
   private moveRight(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     const newTetromino = { ...this.currentTetromino, x: this.currentTetromino.x + 1 };
     if (this.gameBoard.canPlace(newTetromino)) {
@@ -612,7 +614,7 @@ export class TetrisScene extends Phaser.Scene {
    * Move tetromino down
    */
   private moveDown(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     const newTetromino = { ...this.currentTetromino, y: this.currentTetromino.y + 1 };
     if (this.gameBoard.canPlace(newTetromino)) {
@@ -628,7 +630,7 @@ export class TetrisScene extends Phaser.Scene {
    * Rotate tetromino
    */
   private rotate(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     const rotatedTetromino = this.shapeManager.rotateTetromino(this.currentTetromino);
     if (this.gameBoard.canPlace(rotatedTetromino)) {
@@ -641,6 +643,7 @@ export class TetrisScene extends Phaser.Scene {
    * Start soft drop (hold down button)
    */
   private startSoftDrop(): void {
+    if (this.isCountdownActive || !this.isGameActive) return;
     this.isSoftDropping = true;
     this.softDropTimer = 0;
   }
@@ -657,7 +660,7 @@ export class TetrisScene extends Phaser.Scene {
    * Skip current block and spawn next one
    */
   private skipCurrentBlock(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
@@ -670,7 +673,7 @@ export class TetrisScene extends Phaser.Scene {
    * Switch current block shape to a random tetromino
    */
   private switchCurrentBlock(): void {
-    if (!this.currentTetromino) return;
+    if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
@@ -707,6 +710,14 @@ export class TetrisScene extends Phaser.Scene {
     // Destroy prediction before locking
     this.tetrominoRenderer.destroyPrediction();
 
+    // Check game over BEFORE locking to prevent rendering last tetromino
+    if (this.gameBoard.isGameOver()) {
+      // Destroy current tetromino renderer without locking it
+      this.tetrominoRenderer.destroy();
+      this.gameOver();
+      return;
+    }
+
     // Lock ke board
     this.gameBoard.lockTetromino(this.currentTetromino);
 
@@ -715,12 +726,6 @@ export class TetrisScene extends Phaser.Scene {
 
     // Clear completed lines
     // const linesCleared = this.gameBoard.clearLines();
-
-    // Check game over
-    if (this.gameBoard.isGameOver()) {
-      this.gameOver();
-      return;
-    }
 
     // Spawn next tetromino
     this.spawnNextTetromino();
