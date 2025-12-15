@@ -431,6 +431,8 @@ export class UIManager {
     onRight: () => void;
     onDown: () => void;
     onRotate: () => void;
+    onDownPress?: () => void;
+    onDownRelease?: () => void;
   }): void {
     if (this.buttons.skip) {
       this.buttons.skip.on('pointerdown', () => {
@@ -494,12 +496,21 @@ export class UIManager {
       this.buttons.down.on('pointerdown', () => {
         this.buttons.down!.setTint(0xcccccc);
         callbacks.onDown();
+        if (callbacks.onDownPress) {
+          callbacks.onDownPress();
+        }
       });
       this.buttons.down.on('pointerup', () => {
         this.buttons.down!.clearTint();
+        if (callbacks.onDownRelease) {
+          callbacks.onDownRelease();
+        }
       });
       this.buttons.down.on('pointerout', () => {
         this.buttons.down!.clearTint();
+        if (callbacks.onDownRelease) {
+          callbacks.onDownRelease();
+        }
       });
     }
 

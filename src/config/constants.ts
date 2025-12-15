@@ -34,7 +34,7 @@ export const GAME_CONSTANTS = {
   TIMER_WARNING_RED: 10, // Red urgent below 10 seconds
 
   // Colors
-  BACKGROUND_COLOR: '#2a2a3e',
+  BACKGROUND_COLOR: 'transparent',
   TIMER_COLOR_NORMAL: '#FFFFFF',
   TIMER_COLOR_WARNING: '#FFFFFF', // Orange
   TIMER_COLOR_URGENT: '#FFFFFF', // Red
@@ -54,6 +54,7 @@ export const GAME_CONSTANTS = {
 
   // UI Layout
   SCREEN_CENTER_X: 196.5, // 393 / 2
+  SCREEN_CENTER_Y: 426, // 852 / 2
   BACKGROUND_CENTER_X: 196.5, // 393 / 2
   BACKGROUND_CENTER_Y: 426, // 852 / 2
 

@@ -44,6 +44,17 @@ export class TetrisScene extends Phaser.Scene {
   private gameTimer: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
   private constGameTime: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
 
+  // Soft drop (hold down button)
+  private isSoftDropping: boolean = false;
+  private softDropInterval: number = 100; // Fast drop interval when holding down (50ms)
+  private softDropTimer: number = 0;
+
+  // Pre-game countdown
+  private isCountdownActive: boolean = false;
+  private countdownTimer: number = 0;
+  private countdownNumber!: Phaser.GameObjects.Text;
+  private countdownDuration: number = 3000; // 3 seconds countdown
+
   // Debug
   private debugMode: boolean = false;
   private debugGraphics!: Phaser.GameObjects.Graphics;
@@ -159,7 +170,9 @@ export class TetrisScene extends Phaser.Scene {
         onLeft: () => this.moveLeft(),
         onRight: () => this.moveRight(),
         onDown: () => this.moveDown(),
-        onRotate: () => this.rotate()
+        onRotate: () => this.rotate(),
+        onDownPress: () => this.startSoftDrop(),
+        onDownRelease: () => this.stopSoftDrop()
       });
 
       // Setup debug mode
@@ -178,6 +191,7 @@ export class TetrisScene extends Phaser.Scene {
     });
   }
 
+  
   /**
    * Setup debug graphics dan text
    */
@@ -200,7 +214,7 @@ export class TetrisScene extends Phaser.Scene {
    */
   private startGame(): void {
     this.gameBoard.reset();
-    this.isGameActive = true;
+    this.isGameActive = false; // Don't start game immediately
     this.dropTimer = 0;
     this.gameTimer = this.constGameTime; // Reset countdown timer
     this.uiManager.updateTimer(this.gameTimer); // Update timer display
@@ -215,7 +229,116 @@ export class TetrisScene extends Phaser.Scene {
     // Update preview
     this.updateNextShapePreview();
 
-    // Spawn first tetromino
+    // Start countdown before spawning first tetromino
+    this.startCountdown();
+  }
+
+  /**
+   * Start countdown before game begins
+   */
+  private startCountdown(): void {
+    this.isCountdownActive = true;
+    this.countdownTimer = this.countdownDuration;
+
+    // Create countdown text if it doesn't exist
+    if (!this.countdownNumber) {
+      this.countdownNumber = this.add.text(GAME_CONSTANTS.SCREEN_CENTER_X, GAME_CONSTANTS.SCREEN_CENTER_Y, '3', {
+        fontFamily: 'Nunito',
+        fontSize: '120px',
+        color: '#FFFFFF',
+        fontStyle: 'bold',
+        align: 'center',
+        resolution: 2,
+        shadow: {
+          offsetX: 2,
+          offsetY: 2,
+          color: '#000000',
+          blur: 4,
+          stroke: true,
+          fill: true
+        }
+      }).setOrigin(0.5);
+      this.countdownNumber.setDepth(2000);
+      this.countdownNumber.setAlpha(0);
+    }
+
+    // Start countdown animation
+    this.animateCountdown();
+  }
+
+  /**
+   * Animate countdown numbers
+   */
+  private animateCountdown(): void {
+    if (!this.isCountdownActive) return;
+
+    const remainingSeconds = Math.ceil(this.countdownTimer / 1000);
+
+    if (remainingSeconds > 0) {
+      // Update and show number
+      this.countdownNumber.setText(remainingSeconds.toString());
+      this.countdownNumber.setAlpha(1);
+      this.countdownNumber.setScale(0.5);
+      this.countdownNumber.setColor('#FFFFFF');
+      this.countdownNumber.setVisible(true);
+
+      // Animate number appearance
+      this.tweens.add({
+        targets: this.countdownNumber,
+        scale: 1,
+        alpha: 1,
+        duration: 200,
+        ease: 'Back.easeOut'
+      });
+
+      // Animate number disappearance
+      this.tweens.add({
+        targets: this.countdownNumber,
+        alpha: 0,
+        scale: 1.5,
+        duration: 800,
+        delay: 200,
+        ease: 'Power2.easeIn'
+      });
+    } else {
+      // Show "GO!" text
+      this.countdownNumber.setText('GO!');
+      this.countdownNumber.setColor('#00FF00');
+      this.countdownNumber.setAlpha(1);
+      this.countdownNumber.setScale(0.5);
+      this.countdownNumber.setVisible(true);
+
+      this.tweens.add({
+        targets: this.countdownNumber,
+        scale: 1.2,
+        alpha: 1,
+        duration: 300,
+        ease: 'Back.easeOut'
+      });
+
+      this.tweens.add({
+        targets: this.countdownNumber,
+        alpha: 0,
+        scale: 0.8,
+        duration: 700,
+        delay: 300,
+        ease: 'Power2.easeIn',
+        onComplete: () => {
+          this.finishCountdown();
+        }
+      });
+    }
+  }
+
+  /**
+   * Finish countdown and start the game
+   */
+  private finishCountdown(): void {
+    this.isCountdownActive = false;
+    this.countdownNumber.setVisible(false);
+
+    // Start the actual game
+    this.isGameActive = true;
     this.spawnNextTetromino();
   }
 
@@ -310,6 +433,20 @@ export class TetrisScene extends Phaser.Scene {
    * Update - Game loop
    */
   update(time: number, delta: number): void {
+    // Handle countdown before game starts
+    if (this.isCountdownActive) {
+      this.countdownTimer -= delta;
+      const previousSecond = Math.ceil((this.countdownTimer + delta) / 1000);
+      const currentSecond = Math.ceil(this.countdownTimer / 1000);
+
+      // Trigger animation when second changes
+      if (previousSecond !== currentSecond && currentSecond >= 0) {
+        this.animateCountdown();
+      }
+
+      return; // Don't process game logic during countdown
+    }
+
     if (!this.currentTetromino) {
       return;
     }
@@ -325,11 +462,20 @@ export class TetrisScene extends Phaser.Scene {
       this.uiManager.updateSlider(Math.ceil(this.gameTimer), this.constGameTime); // Update slider progress
     }
 
-    // Auto drop tetromino (only if gravity active)
-    if (this.isGameActive) {
+    // Auto drop tetromino (only if gravity active and not soft dropping)
+    if (this.isGameActive && !this.isSoftDropping) {
       this.dropTimer += delta;
       if (this.dropTimer >= this.dropInterval) {
         this.dropTimer = 0;
+        this.moveDown();
+      }
+    }
+
+    // Soft drop tetromino (when holding down button)
+    if (this.isGameActive && this.isSoftDropping) {
+      this.softDropTimer += delta;
+      if (this.softDropTimer >= this.softDropInterval) {
+        this.softDropTimer = 0;
         this.moveDown();
       }
     }
@@ -492,6 +638,22 @@ export class TetrisScene extends Phaser.Scene {
   }
 
   /**
+   * Start soft drop (hold down button)
+   */
+  private startSoftDrop(): void {
+    this.isSoftDropping = true;
+    this.softDropTimer = 0;
+  }
+
+  /**
+   * Stop soft drop (release down button)
+   */
+  private stopSoftDrop(): void {
+    this.isSoftDropping = false;
+    this.softDropTimer = 0;
+  }
+
+  /**
    * Skip current block and spawn next one
    */
   private skipCurrentBlock(): void {
@@ -570,18 +732,58 @@ export class TetrisScene extends Phaser.Scene {
   private gameOver(): void {
     this.isGameActive = false;
 
-    // Show game over text
-    const gameOverText = this.add.text(180, 360, 'GAME OVER', {
-      fontFamily: 'Nunito',
-      fontSize: '32px',
-      color: '#FFFFFF',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
+    // Capture screenshot of play area and send to parent iframe
+    this.capturePlayAreaScreenshot();
 
     // Restart after 3 seconds
     this.time.delayedCall(3000, () => {
-      gameOverText.destroy();
       this.startGame();
+    });
+  }
+
+  /**
+   * Capture screenshot of play area and send to parent iframe
+   */
+  private capturePlayAreaScreenshot(): void {
+    // Calculate play area bounds
+    const x = this.config.boardX;
+    const y = this.config.boardY;
+    const width = GAME_CONSTANTS.PLAY_AREA_WIDTH;
+    const height = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
+
+    // Capture specific area of the game
+    this.game.renderer.snapshot((image: HTMLImageElement | Phaser.Display.Color) => {
+      if (image instanceof HTMLImageElement) {
+        // Create canvas to crop the play area
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          // Draw only the play area portion
+          ctx.drawImage(
+            image,
+            x, y, width, height,  // Source rectangle (from full screenshot)
+            0, 0, width, height    // Destination rectangle (to canvas)
+          );
+
+          // Convert to base64 data URL
+          const screenshotDataUrl = canvas.toDataURL('image/png');
+
+          // Send screenshot to parent iframe via postMessage
+          if (window.parent !== window) {
+            window.parent.postMessage({
+              type: 'PHASER_IMAGE',
+              screenshot: screenshotDataUrl,
+              timestamp: new Date().toISOString()
+            }, '*');
+          }
+
+          // Also store in window object for direct access if needed
+          (window as any).tetrisGameOverScreenshot = screenshotDataUrl;
+        }
+      }
     });
   }
 }
