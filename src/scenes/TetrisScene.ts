@@ -186,8 +186,23 @@ export class TetrisScene extends Phaser.Scene {
         console.log('Gravity:', this.isGameActive ? 'ON' : 'OFF');
       });
 
+      // Listen for restart message from parent iframe
+      this.setupParentMessageListener();
+
       // Start game
       this.startGame();
+    });
+  }
+
+  /**
+   * Setup listener for messages from parent iframe
+   */
+  private setupParentMessageListener(): void {
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'restart') {
+        console.log('Restart command received from parent');
+        this.startGame();
+      }
     });
   }
 
@@ -740,10 +755,8 @@ export class TetrisScene extends Phaser.Scene {
     // Capture screenshot of play area and send to parent iframe
     this.capturePlayAreaScreenshot();
 
-    // Restart after 3 seconds
-    this.time.delayedCall(3000, () => {
-      this.startGame();
-    });
+    // Wait for parent to send restart message
+    // No auto-restart
   }
 
   /**
