@@ -43,7 +43,11 @@ export class UIManager {
    * Create background (adjusted untuk portrait)
    */
   private createBackground(): void {
-    const bg = this.scene.add.image(GAME_CONSTANTS.BACKGROUND_CENTER_X, GAME_CONSTANTS.BACKGROUND_CENTER_Y, 'background');
+
+    const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
+    const centerY = GAME_CONSTANTS.CANVAS_HEIGHT / 2;
+
+    const bg = this.scene.add.image(centerX, centerY, 'background');
     // Scale background untuk fit portrait mode
     const scaleX = GAME_CONSTANTS.CANVAS_WIDTH / bg.width;
     const scaleY = GAME_CONSTANTS.CANVAS_HEIGHT / bg.height;
@@ -58,9 +62,12 @@ export class UIManager {
     const panelWidth = GAME_CONSTANTS.PLAY_AREA_WIDTH;
     const panelHeight = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
 
+    const windowWidth = GAME_CONSTANTS.CANVAS_WIDTH;
+    const windowHeight = GAME_CONSTANTS.CANVAS_HEIGHT;
+
     const panel = this.scene.add.image(
-      this.config.boardX + panelWidth / 2,
-      this.config.boardY + panelHeight / 2,
+      (windowWidth / 2),
+      (windowHeight - (panelHeight / 2) - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN),
       'panel'
     );
 
@@ -72,7 +79,8 @@ export class UIManager {
    * Create header section with vertical layout (timer → instruction → profile)
    */
   private createHeaderSection(gameplayConfig?: GameplayConfig | null): void {
-    const centerX = GAME_CONSTANTS.SCREEN_CENTER_X;
+
+    const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const spacing = GAME_CONSTANTS.HEADER_SPACING;
     const timerHeight = GAME_CONSTANTS.TIMER_HEIGHT;
 
@@ -95,24 +103,24 @@ export class UIManager {
     // Create temporary text objects to measure actual height
     const tempText1 = this.scene.add.text(0, 0,
       'Arrange your skill and recommendation programme\nto complete your personalised career direction.', {
-        fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '14px',
-        fontStyle: '600',
-        align: 'center',
-        lineSpacing: 2,
-        wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
-      });
+      fontFamily: GAME_CONSTANTS.FONT_FAMILY,
+      fontSize: '14px',
+      fontStyle: '600',
+      align: 'center',
+      lineSpacing: 2,
+      wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
+    });
     tempText1.setOrigin(0.5, 0);
     tempText1.setResolution(2);
 
     const tempText2 = this.scene.add.text(0, 0,
       gameplayConfig?.instruction_text || '', {
-        fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '14px',
-        fontStyle: '600',
-        align: 'center',
-        wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
-      });
+      fontFamily: GAME_CONSTANTS.FONT_FAMILY,
+      fontSize: '14px',
+      fontStyle: '600',
+      align: 'center',
+      wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
+    });
     tempText2.setOrigin(0.5, 0);
     tempText2.setResolution(2);
 
@@ -135,7 +143,7 @@ export class UIManager {
   private createTimer(x: number): void {
     // Create full-width timer background attached to top
     const timerBg = this.scene.add.rectangle(
-      GAME_CONSTANTS.SCREEN_CENTER_X,
+      x,
       GAME_CONSTANTS.TIMER_Y,
       GAME_CONSTANTS.CANVAS_WIDTH,
       GAME_CONSTANTS.TIMER_BACKGROUND_HEIGHT,
@@ -187,7 +195,7 @@ export class UIManager {
    */
   private createProfileSection(y: number, gameplayConfig?: GameplayConfig | null): void {
     const profileSize = GAME_CONSTANTS.PROFILE_SIZE;
-    const leftMargin = GAME_CONSTANTS.PROFILE_LEFT_MARGIN;
+    const leftMargin = (GAME_CONSTANTS.CANVAS_WIDTH / 2) - (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
 
     // Profile image positioned from left
     const profile = this.scene.add.image(leftMargin + (profileSize / 2), y, 'profile');
@@ -224,7 +232,7 @@ export class UIManager {
     const handleSize = SLIDER_CONFIG.HANDLE_SIZE;
 
     // Position slider at bottom of profile, aligned to right edge
-    const sliderX = GAME_CONSTANTS.SCREEN_CENTER_X + (GAME_CONSTANTS.CANVAS_WIDTH / 2) - sliderWidth - 20; // 20px from right edge
+    const sliderX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2) - sliderWidth;
     const sliderY = profileY + (GAME_CONSTANTS.PROFILE_SIZE / 3); // Same as profile bottom (center)
 
     // Background slider bar
@@ -371,11 +379,10 @@ export class UIManager {
    * Menggunakan horizontal layout group system (seperti Unity)
    */
   private createControlButtons(gameplayConfig?: GameplayConfig | null): void {
-    const centerX = GAME_CONSTANTS.SCREEN_CENTER_X;
-    const playAreaBottom = this.config.boardY + GAME_CONSTANTS.PLAY_AREA_HEIGHT;
+    const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const buttonSize = GAME_CONSTANTS.BUTTON_SIZE;
     const spacing = GAME_CONSTANTS.BUTTON_SPACING;
-    const buttonY = playAreaBottom + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + (buttonSize / 2);
+    const buttonY = GAME_CONSTANTS.CANVAS_HEIGHT - (buttonSize / 2) - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + buttonSize;
 
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [

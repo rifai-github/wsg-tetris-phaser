@@ -3,9 +3,13 @@
  */
 
 export const GAME_CONSTANTS = {
-  // Canvas size
-  CANVAS_WIDTH: 393,
-  CANVAS_HEIGHT: 852,
+  // Canvas size - Dynamic (responsive)
+  CANVAS_WIDTH: window.innerWidth,
+  CANVAS_HEIGHT: window.innerHeight,
+  
+  // Design Reference Resolution (untuk scaling calculations)
+  DESIGN_WIDTH: 393,
+  DESIGN_HEIGHT: 852,
 
   // Tile size
   TILE_SIZE: 44, // Updated to fit 353x397 play area with 8x9 grid
@@ -17,8 +21,6 @@ export const GAME_CONSTANTS = {
   // Play area dimensions and position
   PLAY_AREA_WIDTH: 353,
   PLAY_AREA_HEIGHT: 397,
-  BOARD_X: 20, // (393 - 353) / 2 = 20px for centering
-  BOARD_Y: 319, // Position to have 136px distance from bottom (852 - 397 - 136)
 
   // Spacing
   PLAY_AREA_BOTTOM_MARGIN: 136, // Distance from play area bottom to screen bottom
@@ -65,7 +67,7 @@ export const GAME_CONSTANTS = {
   TIMER_BACKGROUND_HEIGHT: 40,
   INSTRUCTION_LINE_SPACING: 8,
   PROFILE_SIZE: 40,
-  PROFILE_LEFT_MARGIN: 25,
+  // PROFILE_LEFT_MARGIN: 25,
   PROFILE_NAME_SPACING: 10, // 10px spacing after profile
 
   // Text wrapping

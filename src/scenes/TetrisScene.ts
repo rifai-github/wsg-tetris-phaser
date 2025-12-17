@@ -29,13 +29,16 @@ export class TetrisScene extends Phaser.Scene {
   private gameplayConfigs: GameplayConfig[] = [];
   private currentGameplayConfig: GameplayConfig | null = null;
 
+  // BOARD_X: 20, // (393 - 353) / 2 = 20px for centering
+  // BOARD_Y: 319, // Position to have 136px distance from bottom (852 - 397 - 136)
+
   // Game config
   private config: GameConfig = {
     tileSize: GAME_CONSTANTS.TILE_SIZE,
     gridWidth: GAME_CONSTANTS.GRID_WIDTH,
     gridHeight: GAME_CONSTANTS.GRID_HEIGHT,
-    boardX: GAME_CONSTANTS.BOARD_X,
-    boardY: GAME_CONSTANTS.BOARD_Y
+    boardX: 0, // Will be updated in create()
+    boardY: 0, // Will be updated in create()
   };
 
   // Game timing
@@ -132,6 +135,10 @@ export class TetrisScene extends Phaser.Scene {
    * Create - Initialize game
    */
   create(): void {
+    // Update board position dynamically based on actual canvas size
+    this.config.boardX = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
+    this.config.boardY = this.cameras.main.height - GAME_CONSTANTS.PLAY_AREA_HEIGHT - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN;
+
     // Initialize managers
     this.shapeManager = new ShapeManager();
     this.tetrominoRenderer = new TetrominoRenderer(this, this.config);
@@ -142,6 +149,12 @@ export class TetrisScene extends Phaser.Scene {
     const shapeData = this.cache.json.get('shapeData') as ShapeData[];
     const labelData = this.cache.json.get('labelData') as string[];
     const gameplayConfigData = this.cache.json.get('gameplayConfig') as GameplayConfig[];
+    
+    // Listen for scale resize to update board position
+    this.scale.on('resize', (gameSize: any) => {
+      this.config.boardX = (gameSize.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
+      this.config.boardY = gameSize.height - GAME_CONSTANTS.PLAY_AREA_HEIGHT - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN;
+    });
 
     this.shapeManager.setShapeData(shapeData);
     this.shapeManager.setLabelData(labelData);
@@ -240,8 +253,17 @@ export class TetrisScene extends Phaser.Scene {
       this.lottieAnimation = null;
     }
 
-    if (this.lottieContainer && this.lottieContainer.parentElement) {
-      this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+    if (this.lottieContainer) {
+      // Remove resize/scroll listeners
+      const resizeHandler = (this.lottieContainer as any).resizeHandler;
+      if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
+        window.removeEventListener('scroll', resizeHandler);
+      }
+
+      if (this.lottieContainer.parentElement) {
+        this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+      }
     }
 
     this.gameBoard.reset();
@@ -279,12 +301,6 @@ export class TetrisScene extends Phaser.Scene {
    * Create Lottie countdown animation
    */
   private createLottieCountdown(): void {
-    const canvas = this.game.canvas;
-    const canvasRect = canvas.getBoundingClientRect();
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
     const containerSize = 400;
 
     // Create container for Lottie
@@ -292,19 +308,32 @@ export class TetrisScene extends Phaser.Scene {
     this.lottieContainer.style.position = 'absolute';
     this.lottieContainer.style.width = `${containerSize}px`;
     this.lottieContainer.style.height = `${containerSize}px`;
-    this.lottieContainer.style.left = `${(windowWidth / 2) - (containerSize / 2)}px`;
-    this.lottieContainer.style.top = `${(windowHeight / 2) - (containerSize / 2)}px`;
     this.lottieContainer.style.pointerEvents = 'none';
     this.lottieContainer.style.zIndex = '2000';
 
+    // Add to document body for proper positioning
+    document.body.appendChild(this.lottieContainer);
 
+    // Function to update position dynamically (responsive)
+    const updatePosition = () => {
+      const canvas = this.game.canvas;
+      const canvasRect = canvas.getBoundingClientRect();
+      
+      // Center in actual canvas position (responsive to scale)
+      this.lottieContainer.style.left = `${canvasRect.left + (canvasRect.width - containerSize) / 2}px`;
+      this.lottieContainer.style.top = `${canvasRect.top + (canvasRect.height - containerSize) / 2}px`;
+    };
 
+    // Initial position
+    updatePosition();
 
-    // Add to game canvas container
-    const gameCanvas = this.game.canvas.parentElement;
-    if (gameCanvas) {
-      gameCanvas.appendChild(this.lottieContainer);
-    }
+    // Update position on window resize for responsiveness
+    const resizeHandler = () => updatePosition();
+    window.addEventListener('resize', resizeHandler);
+    window.addEventListener('scroll', resizeHandler);
+
+    // Store handler for cleanup
+    (this.lottieContainer as any).resizeHandler = resizeHandler;
 
     // Load and play Lottie animation
     const animationData = this.cache.json.get('countdownAnimation');
@@ -351,8 +380,18 @@ export class TetrisScene extends Phaser.Scene {
       this.lottieAnimation = null;
     }
 
-    if (this.lottieContainer && this.lottieContainer.parentElement) {
-      this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+    if (this.lottieContainer) {
+      // Remove resize/scroll listeners
+      const resizeHandler = (this.lottieContainer as any).resizeHandler;
+      if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
+        window.removeEventListener('scroll', resizeHandler);
+      }
+
+      // Remove from DOM
+      if (this.lottieContainer.parentElement) {
+        this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+      }
     }
 
     // Start the actual game
