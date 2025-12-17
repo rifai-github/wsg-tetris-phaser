@@ -23,8 +23,8 @@ export const GAME_CONSTANTS = {
   PLAY_AREA_HEIGHT: 397,
 
   // Spacing
-  PLAY_AREA_BOTTOM_MARGIN: 136, // Distance from play area bottom to screen bottom
-  BUTTON_DISTANCE_FROM_PLAY_AREA: 30, // Distance between play area bottom and button top
+  PLAY_AREA_BOTTOM_MARGIN: 120, // Distance from play area bottom to screen bottom
+  BUTTON_DISTANCE_FROM_PLAY_AREA: 20, // Distance between play area bottom and button top
   TETROMINO_DISTANCE_FROM_PLAY_AREA: 10, // Distance between tetromino list bottom and play area top
 
   // Drop speed
@@ -47,7 +47,7 @@ export const GAME_CONSTANTS = {
   // Next shape preview
   NEXT_PREVIEW_START_X: 333, // Start from right side (393 - 60px margin)
   MAX_TETROMINO_HEIGHT: 4, // Maximum height in tiles
-  PREVIEW_SCALE: 0.7,
+  PREVIEW_SCALE: 0.65,
   PREVIEW_BASE_SPACING_MULTIPLIER: 0.5, // tile_size * scale * this value
 
   // Control buttons
