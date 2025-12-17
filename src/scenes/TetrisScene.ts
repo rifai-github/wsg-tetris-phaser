@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import lottie, { AnimationItem } from 'lottie-web';
 import { ShapeManager } from '../managers/ShapeManager';
 import { TetrominoRenderer } from '../managers/TetrominoRenderer';
 import { GameBoard } from '../managers/GameBoard';
@@ -54,6 +55,8 @@ export class TetrisScene extends Phaser.Scene {
   private countdownTimer: number = 0;
   private countdownNumber!: Phaser.GameObjects.Text;
   private countdownDuration: number = 3000; // 3 seconds countdown
+  private lottieContainer!: HTMLDivElement;
+  private lottieAnimation: AnimationItem | null = null;
 
   // Debug
   private debugMode: boolean = false;
@@ -88,6 +91,9 @@ export class TetrisScene extends Phaser.Scene {
     this.load.json('shapeData', ASSET_PATHS.DATA.SHAPES);
     this.load.json('labelData', ASSET_PATHS.DATA.LABELS);
     this.load.json('gameplayConfig', ASSET_PATHS.DATA.GAMEPLAY_CONFIG);
+
+    // Load Lottie animation for countdown
+    this.load.json('countdownAnimation', 'animation/Countdown.json');
 
     // Load shape images - color versions
     this.load.image('shape_i_color', ASSET_PATHS.SHAPES_COLOR.I);
@@ -206,7 +212,7 @@ export class TetrisScene extends Phaser.Scene {
     });
   }
 
-  
+
   /**
    * Setup debug graphics dan text
    */
@@ -228,6 +234,16 @@ export class TetrisScene extends Phaser.Scene {
    * Start/Restart game
    */
   private startGame(): void {
+    // Cleanup any existing Lottie animation
+    if (this.lottieAnimation) {
+      this.lottieAnimation.destroy();
+      this.lottieAnimation = null;
+    }
+
+    if (this.lottieContainer && this.lottieContainer.parentElement) {
+      this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+    }
+
     this.gameBoard.reset();
     this.isGameActive = false; // Don't start game immediately
     this.dropTimer = 0;
@@ -255,94 +271,72 @@ export class TetrisScene extends Phaser.Scene {
     this.isCountdownActive = true;
     this.countdownTimer = this.countdownDuration;
 
-    // Create countdown text if it doesn't exist
-    if (!this.countdownNumber) {
-      this.countdownNumber = this.add.text(GAME_CONSTANTS.SCREEN_CENTER_X, GAME_CONSTANTS.SCREEN_CENTER_Y, '3', {
-        fontFamily: 'Nunito',
-        fontSize: '120px',
-        color: '#FFFFFF',
-        fontStyle: 'bold',
-        align: 'center',
-        resolution: 2,
-        shadow: {
-          offsetX: 2,
-          offsetY: 2,
-          color: '#000000',
-          blur: 4,
-          stroke: true,
-          fill: true
-        }
-      }).setOrigin(0.5);
-      this.countdownNumber.setDepth(2000);
-      this.countdownNumber.setAlpha(0);
-    }
-
-    // Start countdown animation
-    this.animateCountdown();
+    // Create Lottie animation container
+    this.createLottieCountdown();
   }
 
   /**
-   * Animate countdown numbers
+   * Create Lottie countdown animation
+   */
+  private createLottieCountdown(): void {
+    const canvas = this.game.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    const containerSize = 400;
+
+    // Create container for Lottie
+    this.lottieContainer = document.createElement('div');
+    this.lottieContainer.style.position = 'absolute';
+    this.lottieContainer.style.width = `${containerSize}px`;
+    this.lottieContainer.style.height = `${containerSize}px`;
+    this.lottieContainer.style.left = `${(windowWidth / 2) - (containerSize / 2)}px`;
+    this.lottieContainer.style.top = `${(windowHeight / 2) - (containerSize / 2)}px`;
+    this.lottieContainer.style.pointerEvents = 'none';
+    this.lottieContainer.style.zIndex = '2000';
+
+
+
+
+    // Add to game canvas container
+    const gameCanvas = this.game.canvas.parentElement;
+    if (gameCanvas) {
+      gameCanvas.appendChild(this.lottieContainer);
+    }
+
+    // Load and play Lottie animation
+    const animationData = this.cache.json.get('countdownAnimation');
+
+    this.lottieAnimation = lottie.loadAnimation({
+      container: this.lottieContainer,
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      animationData: animationData
+    });
+
+    // Listen for animation complete
+    this.lottieAnimation.addEventListener('complete', () => {
+      this.finishCountdown();
+    });
+
+    // Calculate duration from animation data (135 frames at 30fps = 4.5 seconds)
+    const totalFrames = animationData.op;
+    const frameRate = animationData.fr;
+    const animationDuration = (totalFrames / frameRate) * 1000; // in ms
+
+    // Update countdown duration to match animation
+    this.countdownTimer = animationDuration;
+  }
+
+  /**
+   * Animate countdown numbers (kept for compatibility but now uses Lottie)
    */
   private animateCountdown(): void {
-    if (!this.isCountdownActive) return;
-
-    const remainingSeconds = Math.ceil(this.countdownTimer / 1000);
-
-    if (remainingSeconds > 0) {
-      // Update and show number
-      this.countdownNumber.setText(remainingSeconds.toString());
-      this.countdownNumber.setAlpha(1);
-      this.countdownNumber.setScale(0.5);
-      this.countdownNumber.setColor('#FFFFFF');
-      this.countdownNumber.setVisible(true);
-
-      // Animate number appearance
-      this.tweens.add({
-        targets: this.countdownNumber,
-        scale: 1,
-        alpha: 1,
-        duration: 200,
-        ease: 'Back.easeOut'
-      });
-
-      // Animate number disappearance
-      this.tweens.add({
-        targets: this.countdownNumber,
-        alpha: 0,
-        scale: 1.5,
-        duration: 800,
-        delay: 200,
-        ease: 'Power2.easeIn'
-      });
-    } else {
-      // Show "GO!" text
-      this.countdownNumber.setText('GO!');
-      this.countdownNumber.setColor('#00FF00');
-      this.countdownNumber.setAlpha(1);
-      this.countdownNumber.setScale(0.5);
-      this.countdownNumber.setVisible(true);
-
-      this.tweens.add({
-        targets: this.countdownNumber,
-        scale: 1.2,
-        alpha: 1,
-        duration: 300,
-        ease: 'Back.easeOut'
-      });
-
-      this.tweens.add({
-        targets: this.countdownNumber,
-        alpha: 0,
-        scale: 0.8,
-        duration: 700,
-        delay: 300,
-        ease: 'Power2.easeIn',
-        onComplete: () => {
-          this.finishCountdown();
-        }
-      });
-    }
+    // This method is now handled by Lottie animation
+    // Keeping for compatibility with any references
   }
 
   /**
@@ -350,7 +344,16 @@ export class TetrisScene extends Phaser.Scene {
    */
   private finishCountdown(): void {
     this.isCountdownActive = false;
-    this.countdownNumber.setVisible(false);
+
+    // Cleanup Lottie animation
+    if (this.lottieAnimation) {
+      this.lottieAnimation.destroy();
+      this.lottieAnimation = null;
+    }
+
+    if (this.lottieContainer && this.lottieContainer.parentElement) {
+      this.lottieContainer.parentElement.removeChild(this.lottieContainer);
+    }
 
     // Start the actual game
     this.isGameActive = true;
@@ -363,7 +366,7 @@ export class TetrisScene extends Phaser.Scene {
   private spawnNextTetromino(): void {
     // Ambil shape pertama dari queue
     this.currentTetromino = this.nextTetrominos.shift()!;
-    
+
     // Tambahkan shape baru di akhir queue
     this.nextTetrominos.push(this.shapeManager.generateRandomTetromino());
 
@@ -538,7 +541,7 @@ export class TetrisScene extends Phaser.Scene {
     // Draw current tetromino bounding box
     const matrix = this.currentTetromino.matrix;
     this.debugGraphics.lineStyle(2, 0xff0000, 0.8);
-    
+
     for (let row = 0; row < matrix.length; row++) {
       for (let col = 0; col < matrix[row].length; col++) {
         if (matrix[row][col] === 1) {
@@ -554,7 +557,7 @@ export class TetrisScene extends Phaser.Scene {
     const shapeHeight = matrix.length * this.config.tileSize;
     const shapeCenterX = this.config.boardX + this.currentTetromino.x * this.config.tileSize + shapeWidth / 2;
     const shapeCenterY = this.config.boardY + this.currentTetromino.y * this.config.tileSize + shapeHeight / 2;
-    
+
     this.debugGraphics.fillStyle(0xff00ff, 1);
     this.debugGraphics.fillCircle(shapeCenterX, shapeCenterY, 3);
 
@@ -562,17 +565,17 @@ export class TetrisScene extends Phaser.Scene {
     this.debugGraphics.fillStyle(0x00ffff, 1);
     for (let i = 0; i < this.currentTetromino.shape.text_position.length; i++) {
       const [offsetX, offsetY] = this.currentTetromino.shape.text_position[i];
-      
+
       // Original position (before rotation)
       this.debugGraphics.fillCircle(shapeCenterX + offsetX, shapeCenterY + offsetY, 2);
-      
+
       // Rotated position
       const rad = Phaser.Math.DegToRad(this.currentTetromino.rotation);
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
       const rotatedX = offsetX * cos - offsetY * sin;
       const rotatedY = offsetX * sin + offsetY * cos;
-      
+
       this.debugGraphics.lineStyle(1, 0xffff00, 0.5);
       this.debugGraphics.lineBetween(
         shapeCenterX + offsetX,
@@ -580,7 +583,7 @@ export class TetrisScene extends Phaser.Scene {
         shapeCenterX + rotatedX,
         shapeCenterY + rotatedY
       );
-      
+
       this.debugGraphics.fillStyle(0xffff00, 1);
       this.debugGraphics.fillCircle(shapeCenterX + rotatedX, shapeCenterY + rotatedY, 3);
     }
