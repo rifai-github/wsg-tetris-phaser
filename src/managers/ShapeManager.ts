@@ -71,30 +71,35 @@ export class ShapeManager {
   private getLabelsForShape(shape: ShapeData): string[] {
     const labels: string[] = [];
     const textPositionCount = shape.text_position.length;
+    const availableLabels = shape.label || []; // Get labels from shape
+
+    if (availableLabels.length === 0) {
+      return ['Label']; // Fallback if no labels available
+    }
 
     // Jika ada 2 text position (S dan Z), coba ambil 2-word label
     if (textPositionCount === 2) {
-      const twoWordLabel = this.getTwoWordLabel();
+      const twoWordLabel = this.getTwoWordLabelFromArray(availableLabels);
       if (twoWordLabel) {
         labels.push(...twoWordLabel);
       } else {
-        // Fallback: ambil 2 label berbeda
-        labels.push(this.getRandomLabel());
-        labels.push(this.getRandomLabel());
+        // Fallback: ambil 2 label berbeda dari shape.label
+        labels.push(this.getRandomLabelFromArray(availableLabels));
+        labels.push(this.getRandomLabelFromArray(availableLabels));
       }
     } else {
-      // Shape lain: 1 label
-      labels.push(this.getRandomLabel());
+      // Shape lain: 1 label dari shape.label
+      labels.push(this.getRandomLabelFromArray(availableLabels));
     }
 
     return labels;
   }
 
   /**
-   * Cari label yang terdiri dari 2 kata (seperti "Future Ready")
+   * Cari label yang terdiri dari 2 kata dari array (seperti "Data Analytics")
    */
-  private getTwoWordLabel(): string[] | null {
-    const twoWordLabels = this.labelData.filter(label => label.includes(' '));
+  private getTwoWordLabelFromArray(labels: string[]): string[] | null {
+    const twoWordLabels = labels.filter(label => label.includes(' '));
     if (twoWordLabels.length > 0) {
       const selected = twoWordLabels[Math.floor(Math.random() * twoWordLabels.length)];
       const words = selected.split(' ');
@@ -104,19 +109,14 @@ export class ShapeManager {
   }
 
   /**
-   * Get random label yang belum dipakai (atau reset jika semua sudah dipakai)
+   * Get random label dari array yang diberikan
    */
-  private getRandomLabel(): string {
-    // Reset jika semua label sudah dipakai
-    if (this.usedLabels.size >= this.labelData.length) {
-      this.usedLabels.clear();
+  private getRandomLabelFromArray(labels: string[]): string {
+    if (labels.length === 0) {
+      return 'Label';
     }
-
-    // Filter label yang belum dipakai
-    const availableLabels = this.labelData.filter(label => !this.usedLabels.has(label));
     
-    const randomLabel = availableLabels[Math.floor(Math.random() * availableLabels.length)];
-    this.usedLabels.add(randomLabel);
+    const randomLabel = labels[Math.floor(Math.random() * labels.length)];
     
     return randomLabel;
   }

@@ -12,6 +12,7 @@ export interface ShapeData {
   prediction_path: string; // Path untuk prediction image
   text_position: number[][]; // Array of [x, y] offsets untuk text placement
   matrix: number[][];
+  label: string[]; // Array of available labels for this shape
 }
 
 /**

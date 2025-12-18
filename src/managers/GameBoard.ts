@@ -64,7 +64,8 @@ export class GameBoard {
   lockTetromino(tetromino: Tetromino): void {
     const matrix = tetromino.matrix;
     const originalMatrix = tetromino.shape.matrix;
-    const shapeKey = `shape_${tetromino.shape.shape_name}_color`;
+    const outlineKey = `shape_${tetromino.shape.shape_name}_outline`;
+    const colorKey = `shape_${tetromino.shape.shape_name}_color`;
 
     // Hitung center berdasarkan actual filled tiles untuk akurasi
     const center = this.calculateTrueCenter(matrix, tetromino.x, tetromino.y);
@@ -73,15 +74,34 @@ export class GameBoard {
     const originalWidth = originalMatrix[0].length * this.config.tileSize;
     const originalHeight = originalMatrix.length * this.config.tileSize;
 
-    // Create permanent complete shape image dan rotate
-    const image = this.scene.add.image(center.x, center.y, shapeKey);
+    // Create outline shape first
+    const image = this.scene.add.image(center.x, center.y, outlineKey);
     image.setDisplaySize(originalWidth, originalHeight);
     image.setAngle(tetromino.rotation);
     this.lockedTiles.add(image);
 
+    const itemScale = image.scale;
+    this.scene.tweens.add({
+      targets: image,
+      scale: { from: itemScale, to: itemScale + 0.1 },
+      duration: 150,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        image.setTexture(colorKey);
+        this.scene.tweens.add({
+          targets: image,
+          scale: { from: itemScale + 0.1, to: itemScale },
+          duration: 150,
+          ease: 'Back.easeIn',
+          onComplete: () => {
+          }
+        });
+      }
+    });
+
     // Create permanent text labels
     const textRotation = this.getTextRotation(tetromino.rotation);
-    
+
     for (let i = 0; i < tetromino.shape.text_position.length; i++) {
       const [offsetX, offsetY] = tetromino.shape.text_position[i];
       const label = tetromino.labels[i] || tetromino.labels[0];
@@ -198,7 +218,7 @@ export class GameBoard {
   private clearLine(row: number): void {
     // Track unique images yang perlu dihapus
     const imagesToDestroy = new Set<Phaser.GameObjects.Image>();
-    
+
     for (let col = 0; col < this.config.gridWidth; col++) {
       const tile = this.grid[row][col];
       if (tile.shapeImage) {
@@ -231,7 +251,7 @@ export class GameBoard {
   private moveDownAfterClear(clearedRows: number[]): void {
     // Untuk simplicity, kita rebuild locked shapes
     // Ini bukan optimal tapi akan berfungsi dengan shape-based approach
-    
+
     // Sort dari bawah ke atas
     clearedRows.sort((a, b) => b - a);
 
@@ -252,13 +272,13 @@ export class GameBoard {
     // Move all remaining locked tiles down
     const moveDistance = clearedRows.length * this.config.tileSize;
     const children = this.lockedTiles.getAll();
-    
+
     children.forEach(child => {
       if (child instanceof Phaser.GameObjects.Image || child instanceof Phaser.GameObjects.Text) {
         // Only move if y position is above cleared area
         const lowestClearedRow = Math.max(...clearedRows);
         const lowestClearedY = this.config.boardY + lowestClearedRow * this.config.tileSize;
-        
+
         if (child.y < lowestClearedY) {
           child.y += moveDistance;
         }
@@ -285,7 +305,7 @@ export class GameBoard {
     // Destroy semua locked tiles
     this.lockedTiles.destroy();
     this.lockedTiles = this.scene.add.container(0, 0);
-    
+
     // Reset grid
     this.initializeGrid();
   }

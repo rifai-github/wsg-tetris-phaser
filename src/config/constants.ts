@@ -136,7 +136,6 @@ export const ASSET_PATHS = {
   // Data Files
   DATA: {
     SHAPES: '/shape_data.json',
-    LABELS: '/label_block.json',
     GAMEPLAY_CONFIG: '/gameplay_config.json',
   },
 };

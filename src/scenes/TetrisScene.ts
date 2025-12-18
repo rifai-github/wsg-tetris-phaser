@@ -92,7 +92,6 @@ export class TetrisScene extends Phaser.Scene {
 
     // Load shape data JSON
     this.load.json('shapeData', ASSET_PATHS.DATA.SHAPES);
-    this.load.json('labelData', ASSET_PATHS.DATA.LABELS);
     this.load.json('gameplayConfig', ASSET_PATHS.DATA.GAMEPLAY_CONFIG);
 
     // Load Lottie animation for countdown
@@ -145,9 +144,8 @@ export class TetrisScene extends Phaser.Scene {
     this.gameBoard = new GameBoard(this, this.config);
     this.uiManager = new UIManager(this, this.config);
 
-    // Load shape, label, and gameplay data
+    // Load shape and gameplay data
     const shapeData = this.cache.json.get('shapeData') as ShapeData[];
-    const labelData = this.cache.json.get('labelData') as string[];
     const gameplayConfigData = this.cache.json.get('gameplayConfig') as GameplayConfig[];
     
     // Listen for scale resize to update board position
@@ -157,7 +155,6 @@ export class TetrisScene extends Phaser.Scene {
     });
 
     this.shapeManager.setShapeData(shapeData);
-    this.shapeManager.setLabelData(labelData);
     this.gameplayConfigs = gameplayConfigData;
 
     // Get URL parameters
@@ -735,24 +732,56 @@ export class TetrisScene extends Phaser.Scene {
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
 
-    // Generate a random tetromino shape
-    const randomTetromino = this.shapeManager.generateRandomTetromino();
+    // Save current position
+    const currentX = this.currentTetromino.x;
+    const currentY = this.currentTetromino.y;
 
-    // Transform current tetromino to the new random shape, preserving position and rotation
-    // Apply the current rotation to the new shape
-    let rotatedMatrix = randomTetromino.shape.matrix;
-    for (let i = 0; i < this.currentTetromino.rotation / 90; i++) {
-      rotatedMatrix = this.shapeManager.rotateMatrix(rotatedMatrix);
+    // Try to find a valid shape that can fit at current position
+    const rotations = [0, 90, 180, 270];
+    const maxAttempts = 20; // Try up to 20 different shape+rotation combinations
+    let validShapeFound = false;
+
+    for (let attempt = 0; attempt < maxAttempts && !validShapeFound; attempt++) {
+      // Generate a random tetromino
+      const randomTetromino = this.shapeManager.generateRandomTetromino();
+      
+      // Try each rotation angle for this shape
+      const rotationsToTry = randomTetromino.shape.shape_name === 'o' 
+        ? [0] // O shape only needs 0 rotation
+        : rotations;
+
+      for (const rotation of rotationsToTry) {
+        // Apply rotation to matrix
+        let rotatedMatrix = randomTetromino.shape.matrix;
+        for (let i = 0; i < rotation / 90; i++) {
+          rotatedMatrix = this.shapeManager.rotateMatrix(rotatedMatrix);
+        }
+
+        // Create test tetromino with current position
+        const testTetromino = {
+          shape: randomTetromino.shape,
+          x: currentX,
+          y: currentY,
+          rotation: rotation,
+          matrix: rotatedMatrix,
+          labels: randomTetromino.labels
+        };
+
+        // Check if this shape+rotation can be placed at current position
+        if (this.gameBoard.canPlace(testTetromino)) {
+          this.currentTetromino = testTetromino;
+          validShapeFound = true;
+          break;
+        }
+      }
     }
 
-    this.currentTetromino = {
-      shape: randomTetromino.shape,
-      x: this.currentTetromino.x,
-      y: this.currentTetromino.y,
-      rotation: this.currentTetromino.rotation,
-      matrix: rotatedMatrix,
-      labels: this.currentTetromino.labels // Keep the same labels
-    };
+    // If no valid shape found after all attempts, keep the current shape
+    // (should rarely happen, but prevents crashes)
+    if (!validShapeFound) {
+      console.warn('Could not find valid shape for switch at current position');
+      return;
+    }
 
     // Update prediction for new tetromino shape
     this.updatePrediction();
