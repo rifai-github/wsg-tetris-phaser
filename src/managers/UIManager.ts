@@ -154,7 +154,7 @@ export class UIManager {
     // Create timer text
     this.timerText = this.scene.add.text(
       x,
-      GAME_CONSTANTS.TIMER_Y + 2, // Slightly offset from background center
+      GAME_CONSTANTS.TIMER_Y + 3, // Slightly offset from background center
       '00:00',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,

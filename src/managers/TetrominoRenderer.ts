@@ -229,7 +229,7 @@ export class TetrominoRenderer {
     this.predictionImage = this.scene.add.image(center.x, center.y, shapeKey);
     this.predictionImage.setDisplaySize(originalWidth, originalHeight);
     this.predictionImage.setAngle(tetromino.rotation); // Use current rotation, not optimal
-    this.predictionImage.setAlpha(0.3); // Guide visibility
+    this.predictionImage.setAlpha(1); // Guide visibility
   }
 
   /**

@@ -23,7 +23,7 @@ export const GAME_CONSTANTS = {
   PLAY_AREA_HEIGHT: 397,
 
   // Spacing
-  PLAY_AREA_BOTTOM_MARGIN: 120, // Distance from play area bottom to screen bottom
+  PLAY_AREA_BOTTOM_MARGIN: 110, // Distance from play area bottom to screen bottom
   BUTTON_DISTANCE_FROM_PLAY_AREA: 20, // Distance between play area bottom and button top
   TETROMINO_DISTANCE_FROM_PLAY_AREA: 10, // Distance between tetromino list bottom and play area top
 
@@ -61,8 +61,8 @@ export const GAME_CONSTANTS = {
   BACKGROUND_CENTER_Y: 426, // 852 / 2
 
   // Header section
-  HEADER_SPACING: 10,
-  TIMER_HEIGHT: 35,
+  HEADER_SPACING: 8,
+  TIMER_HEIGHT: 25,
   TIMER_Y: 10,
   TIMER_BACKGROUND_HEIGHT: 40,
   INSTRUCTION_LINE_SPACING: 8,
