@@ -67,7 +67,7 @@ export class UIManager {
 
     const panel = this.scene.add.image(
       (windowWidth / 2),
-      (windowHeight - (panelHeight / 2) - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN),
+      (GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + (GAME_CONSTANTS.MAX_TETROMINO_HEIGHT * this.config.tileSize * GAME_CONSTANTS.PREVIEW_SCALE / 2) + (panelHeight / 2)),
       'panel'
     );
 
@@ -104,7 +104,7 @@ export class UIManager {
     const tempText1 = this.scene.add.text(0, 0,
       'Arrange your skill and recommendation programme\nto complete your personalised career direction.', {
       fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-      fontSize: '14px',
+      fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
       fontStyle: '600',
       align: 'center',
       lineSpacing: 2,
@@ -116,7 +116,7 @@ export class UIManager {
     const tempText2 = this.scene.add.text(0, 0,
       gameplayConfig?.instruction_text || '', {
       fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-      fontSize: '14px',
+      fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
       fontStyle: '600',
       align: 'center',
       wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
@@ -158,7 +158,7 @@ export class UIManager {
       '00:00',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '14px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: GAME_CONSTANTS.TIMER_COLOR_NORMAL,
         fontStyle: '600',
         align: 'center'
@@ -209,7 +209,7 @@ export class UIManager {
       'John\nDoe',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '16px',
+        fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: 'bold',
         lineSpacing: -5,
@@ -326,7 +326,7 @@ export class UIManager {
       'Arrange your skill and recommendation programme\nto complete your personalised career direction.',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '14px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: '600',
         align: 'center',
@@ -353,7 +353,7 @@ export class UIManager {
       gameplayConfig?.instruction_text || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: '14px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
         align: 'center',
@@ -382,8 +382,8 @@ export class UIManager {
     const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const buttonSize = GAME_CONSTANTS.BUTTON_SIZE;
     const spacing = GAME_CONSTANTS.BUTTON_SPACING;
-    const buttonY = GAME_CONSTANTS.CANVAS_HEIGHT - (buttonSize / 2) - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + buttonSize;
-
+    const buttonY = GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + GAME_CONSTANTS.PLAY_AREA_HEIGHT + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + (buttonSize / 2) +  buttonSize;
+  
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [
       { key: 'skip', texture: 'button_skip' },

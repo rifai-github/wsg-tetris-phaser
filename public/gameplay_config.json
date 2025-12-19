@@ -32,7 +32,7 @@
             "rotate"
         ],
         "play_area": "/images/play_area/innovator.png",
-        "instruction_text": "Combine glowing block to unlock new skill!",
+        "instruction_text": "Rotate your block to fit more!",
         "instruction_text_color": "#D14BFF"
     }
 ]

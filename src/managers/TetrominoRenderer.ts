@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Tetromino, GameConfig } from '../types';
+import { GAME_CONSTANTS } from '../config/constants';
 
 /**
  * TetrominoRenderer - Mengelola rendering tetromino dengan images dan text labels
@@ -63,7 +64,7 @@ export class TetrominoRenderer {
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: '13px',
+          fontSize: Math.floor(13 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
@@ -177,7 +178,7 @@ export class TetrominoRenderer {
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: `${Math.floor(13 * scale)}px`,
+          fontSize: `${Math.floor(13 * scale * GAME_CONSTANTS.SCALE_FACTOR)}px`,
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',

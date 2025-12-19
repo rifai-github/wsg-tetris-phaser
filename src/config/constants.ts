@@ -2,6 +2,10 @@
  * Game constants - Semua nilai konfigurasi game
  */
 
+// Calculate scale factor for small screens
+const MIN_HEIGHT = 830;
+const SCALE_FACTOR = window.innerHeight < MIN_HEIGHT ? window.innerHeight / MIN_HEIGHT : 1;
+
 export const GAME_CONSTANTS = {
   // Canvas size - Dynamic (responsive)
   CANVAS_WIDTH: window.innerWidth,
@@ -10,22 +14,26 @@ export const GAME_CONSTANTS = {
   // Design Reference Resolution (untuk scaling calculations)
   DESIGN_WIDTH: 393,
   DESIGN_HEIGHT: 852,
+  
+  // Scale factor for small screens
+  SCALE_FACTOR: SCALE_FACTOR,
+  MIN_HEIGHT: MIN_HEIGHT,
 
-  // Tile size
-  TILE_SIZE: 44, // Updated to fit 353x397 play area with 8x9 grid
+  // Tile size (scaled for small screens)
+  TILE_SIZE: Math.floor(44 * SCALE_FACTOR), // Updated to fit 353x397 play area with 8x9 grid
 
   // Grid dimensions
   GRID_WIDTH: 8,
   GRID_HEIGHT: 9,
 
-  // Play area dimensions and position
-  PLAY_AREA_WIDTH: 353,
-  PLAY_AREA_HEIGHT: 397,
+  // Play area dimensions and position (scaled for small screens)
+  PLAY_AREA_WIDTH: Math.floor(353 * SCALE_FACTOR),
+  PLAY_AREA_HEIGHT: Math.floor(397 * SCALE_FACTOR),
 
-  // Spacing
-  PLAY_AREA_BOTTOM_MARGIN: 110, // Distance from play area bottom to screen bottom
-  BUTTON_DISTANCE_FROM_PLAY_AREA: 20, // Distance between play area bottom and button top
-  TETROMINO_DISTANCE_FROM_PLAY_AREA: 10, // Distance between tetromino list bottom and play area top
+  // Spacing (scaled for small screens)
+  PLAY_AREA_TOP_MARGIN: Math.floor(230 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
+  BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between play area bottom and button top
+  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
 
   // Drop speed
   DROP_INTERVAL: 1000, // 1 second
@@ -50,9 +58,9 @@ export const GAME_CONSTANTS = {
   PREVIEW_SCALE: 0.65,
   PREVIEW_BASE_SPACING_MULTIPLIER: 0.5, // tile_size * scale * this value
 
-  // Control buttons
-  BUTTON_SIZE: 70,
-  BUTTON_SPACING: 15,
+  // Control buttons (scaled for small screens)
+  BUTTON_SIZE: Math.floor(70 * SCALE_FACTOR),
+  BUTTON_SPACING: Math.floor(15 * SCALE_FACTOR),
 
   // UI Layout
   SCREEN_CENTER_X: 196.5, // 393 / 2
@@ -60,15 +68,15 @@ export const GAME_CONSTANTS = {
   BACKGROUND_CENTER_X: 196.5, // 393 / 2
   BACKGROUND_CENTER_Y: 426, // 852 / 2
 
-  // Header section
-  HEADER_SPACING: 8,
-  TIMER_HEIGHT: 25,
-  TIMER_Y: 10,
-  TIMER_BACKGROUND_HEIGHT: 40,
-  INSTRUCTION_LINE_SPACING: 8,
-  PROFILE_SIZE: 40,
+  // Header section (scaled for small screens)
+  HEADER_SPACING: Math.floor(8 * SCALE_FACTOR),
+  TIMER_HEIGHT: Math.floor(25 * SCALE_FACTOR),
+  TIMER_Y: Math.floor(10 * SCALE_FACTOR),
+  TIMER_BACKGROUND_HEIGHT: Math.floor(40 * SCALE_FACTOR),
+  INSTRUCTION_LINE_SPACING: Math.floor(8 * SCALE_FACTOR),
+  PROFILE_SIZE: Math.floor(40 * SCALE_FACTOR),
   // PROFILE_LEFT_MARGIN: 25,
-  PROFILE_NAME_SPACING: 10, // 10px spacing after profile
+  PROFILE_NAME_SPACING: Math.floor(10 * SCALE_FACTOR), // 10px spacing after profile
 
   // Text wrapping
   INSTRUCTION_WORD_WRAP_WIDTH: 373, // 393 - 20px margins
@@ -141,9 +149,9 @@ export const ASSET_PATHS = {
 };
 
 export const SLIDER_CONFIG = {
-  BACKGROUND_WIDTH: 164,
-  BACKGROUND_HEIGHT: 10,
-  HANDLE_SIZE: 40,
+  BACKGROUND_WIDTH: Math.floor(164 * SCALE_FACTOR),
+  BACKGROUND_HEIGHT: Math.floor(10 * SCALE_FACTOR),
+  HANDLE_SIZE: Math.floor(40 * SCALE_FACTOR),
   PERCENTAGE_COLOR: '#C22C98',
-  PERCENTAGE_FONT_SIZE: '12px',
+  PERCENTAGE_FONT_SIZE: Math.floor(12 * SCALE_FACTOR) + 'px',
 };

@@ -136,7 +136,8 @@ export class TetrisScene extends Phaser.Scene {
   create(): void {
     // Update board position dynamically based on actual canvas size
     this.config.boardX = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
-    this.config.boardY = this.cameras.main.height - GAME_CONSTANTS.PLAY_AREA_HEIGHT - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN;
+    this.config.boardY = (GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + (GAME_CONSTANTS.MAX_TETROMINO_HEIGHT * this.config.tileSize * GAME_CONSTANTS.PREVIEW_SCALE / 2))
+
 
     // Initialize managers
     this.shapeManager = new ShapeManager();
@@ -149,10 +150,10 @@ export class TetrisScene extends Phaser.Scene {
     const gameplayConfigData = this.cache.json.get('gameplayConfig') as GameplayConfig[];
     
     // Listen for scale resize to update board position
-    this.scale.on('resize', (gameSize: any) => {
-      this.config.boardX = (gameSize.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
-      this.config.boardY = gameSize.height - GAME_CONSTANTS.PLAY_AREA_HEIGHT - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN;
-    });
+    // this.scale.on('resize', (gameSize: any) => {
+    //   this.config.boardX = (gameSize.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
+    //   this.config.boardY = gameSize.height - GAME_CONSTANTS.PLAY_AREA_HEIGHT - GAME_CONSTANTS.PLAY_AREA_BOTTOM_MARGIN;
+    // });
 
     this.shapeManager.setShapeData(shapeData);
     this.gameplayConfigs = gameplayConfigData;
