@@ -3,7 +3,7 @@
  */
 
 // Calculate scale factor for small screens
-const MIN_HEIGHT = 830;
+const MIN_HEIGHT = 850;
 const SCALE_FACTOR = window.innerHeight < MIN_HEIGHT ? window.innerHeight / MIN_HEIGHT : 1;
 
 export const GAME_CONSTANTS = {
@@ -31,7 +31,7 @@ export const GAME_CONSTANTS = {
   PLAY_AREA_HEIGHT: Math.floor(397 * SCALE_FACTOR),
 
   // Spacing (scaled for small screens)
-  PLAY_AREA_TOP_MARGIN: Math.floor(230 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
+  PLAY_AREA_TOP_MARGIN: Math.floor(250 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
   BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between play area bottom and button top
   TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
 
@@ -71,9 +71,9 @@ export const GAME_CONSTANTS = {
   // Header section (scaled for small screens)
   HEADER_SPACING: Math.floor(8 * SCALE_FACTOR),
   TIMER_HEIGHT: Math.floor(25 * SCALE_FACTOR),
-  TIMER_Y: Math.floor(10 * SCALE_FACTOR),
+  START_Y: Math.floor(20 * SCALE_FACTOR),
   TIMER_BACKGROUND_HEIGHT: Math.floor(40 * SCALE_FACTOR),
-  INSTRUCTION_LINE_SPACING: Math.floor(8 * SCALE_FACTOR),
+  INSTRUCTION_LINE_SPACING: Math.floor(1 * SCALE_FACTOR),
   PROFILE_SIZE: Math.floor(40 * SCALE_FACTOR),
   // PROFILE_LEFT_MARGIN: 25,
   PROFILE_NAME_SPACING: Math.floor(10 * SCALE_FACTOR), // 10px spacing after profile
@@ -90,6 +90,7 @@ export const ASSET_PATHS = {
   BACKGROUND: '/images/background.png',
   PROFILE: '/images/profile-placeholder.png',
   DEFAULT_PLAY_AREA: '/images/panel-play-area-purple.png',
+  TIMER_BG: '/images/timer-bg.png',
 
   // Control Buttons
   BUTTONS: {

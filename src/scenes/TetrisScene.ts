@@ -82,6 +82,9 @@ export class TetrisScene extends Phaser.Scene {
     // Load profile placeholder
     this.load.image('profile', ASSET_PATHS.PROFILE);
 
+    // Load timer background
+    this.load.image('timer_bg', ASSET_PATHS.TIMER_BG);
+
     // Load control buttons
     this.load.image('button_skip', ASSET_PATHS.BUTTONS.SKIP);
     this.load.image('button_switch', ASSET_PATHS.BUTTONS.SWITCH);
@@ -123,11 +126,6 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('shape_s_prediction', ASSET_PATHS.SHAPES_PREDICTION.S);
     this.load.image('shape_t_prediction', ASSET_PATHS.SHAPES_PREDICTION.T);
     this.load.image('shape_z_prediction', ASSET_PATHS.SHAPES_PREDICTION.Z);
-
-    // Load slider assets
-    this.load.image('slider_background', ASSET_PATHS.SLIDER.BACKGROUND);
-    this.load.image('slider_progress', ASSET_PATHS.SLIDER.PROGRESS);
-    this.load.image('slider_handling', ASSET_PATHS.SLIDER.HANDLING);
   }
 
   /**
@@ -161,6 +159,15 @@ export class TetrisScene extends Phaser.Scene {
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type') || 'explorer'; // Default to explorer
+    
+    // Get timer duration from query param or use default
+    const timerParam = urlParams.get('timer');
+    const timerDuration = timerParam ? parseInt(timerParam, 10) : GAME_CONSTANTS.COUNTDOWN_DURATION;
+    this.constGameTime = timerDuration;
+    this.gameTimer = timerDuration;
+    
+    // Get username from query param or use default
+    const username = urlParams.get('username') || undefined;
 
     // Find current gameplay config based on URL parameter
     this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
@@ -175,7 +182,7 @@ export class TetrisScene extends Phaser.Scene {
     // Wait for loading to complete before setting up UI and starting game
     this.load.once('complete', () => {
       // Setup UI after image is loaded
-      this.uiManager.setupUI(this.currentGameplayConfig);
+      this.uiManager.setupUI(this.currentGameplayConfig, username);
 
       // Check if prediction mode based on special_tag
       this.isExplorerMode = this.currentGameplayConfig?.special_tag.includes('prediction') || false;
@@ -269,7 +276,6 @@ export class TetrisScene extends Phaser.Scene {
     this.dropTimer = 0;
     this.gameTimer = this.constGameTime; // Reset countdown timer
     this.uiManager.updateTimer(this.gameTimer); // Update timer display
-    this.uiManager.updateSlider(this.gameTimer, this.constGameTime); // Update slider display
 
     // Generate 7 next tetrominos
     this.nextTetrominos = [];
@@ -514,7 +520,6 @@ export class TetrisScene extends Phaser.Scene {
         this.gameOver(); // Time's up!
       }
       this.uiManager.updateTimer(Math.ceil(this.gameTimer)); // Show ceiling for better UX
-      this.uiManager.updateSlider(Math.ceil(this.gameTimer), this.constGameTime); // Update slider progress
     }
 
     // Auto drop tetromino (only if gravity active and not soft dropping)
@@ -835,14 +840,41 @@ export class TetrisScene extends Phaser.Scene {
    * Capture screenshot of play area and send to parent iframe
    */
   private capturePlayAreaScreenshot(): void {
-    // Calculate play area bounds
-    const x = this.config.boardX;
-    const y = this.config.boardY;
-    const width = GAME_CONSTANTS.PLAY_AREA_WIDTH;
-    const height = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
+    // Hide prediction shape before capturing screenshot
+    this.tetrominoRenderer.destroyPrediction();
 
-    // Capture specific area of the game
-    this.game.renderer.snapshot((image: HTMLImageElement | Phaser.Display.Color) => {
+    // Stop all ongoing tweens to ensure shapes are in final state
+    this.tweens.killAll();
+
+    // Force all locked tiles to their final color state (no outline, no animation)
+    const allImages = this.gameBoard.getLockedTiles().getAll() as Phaser.GameObjects.Image[];
+    allImages.forEach(obj => {
+      if (obj instanceof Phaser.GameObjects.Image) {
+        // Check if it's a shape image (not text)
+        const currentTexture = obj.texture.key;
+        if (currentTexture.includes('_outline')) {
+          // Change outline to color
+          const colorKey = currentTexture.replace('_outline', '_color');
+          obj.setTexture(colorKey);
+        }
+        // Reset scale to original (before animation)
+        const originalScale = (obj as any).originalScale;
+        if (originalScale !== undefined) {
+          obj.setScale(originalScale);
+        }
+      }
+    });
+
+    // Wait a frame to ensure all changes are rendered
+    this.time.delayedCall(50, () => {
+      // Calculate play area bounds
+      const x = this.config.boardX;
+      const y = this.config.boardY;
+      const width = GAME_CONSTANTS.PLAY_AREA_WIDTH;
+      const height = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
+
+      // Capture specific area of the game
+      this.game.renderer.snapshot((image: HTMLImageElement | Phaser.Display.Color) => {
       if (image instanceof HTMLImageElement) {
         // Create canvas to crop the play area
         const canvas = document.createElement('canvas');
@@ -874,6 +906,7 @@ export class TetrisScene extends Phaser.Scene {
           (window as any).tetrisGameOverScreenshot = screenshotDataUrl;
         }
       }
+    });
     });
   }
 }

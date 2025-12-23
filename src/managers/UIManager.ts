@@ -32,10 +32,10 @@ export class UIManager {
   /**
    * Setup semua UI elements
    */
-  setupUI(gameplayConfig?: GameplayConfig | null): void {
+  setupUI(gameplayConfig?: GameplayConfig | null, username?: string): void {
     this.createBackground();
     this.createPlayAreaPanel();
-    this.createHeaderSection(gameplayConfig);
+    this.createHeaderSection(gameplayConfig, username);
     this.createControlButtons(gameplayConfig);
   }
 
@@ -76,96 +76,20 @@ export class UIManager {
   }
 
   /**
-   * Create header section with vertical layout (timer → instruction → profile)
+   * Create header section with vertical layout (instruction → profile with timer)
    */
-  private createHeaderSection(gameplayConfig?: GameplayConfig | null): void {
+  private createHeaderSection(gameplayConfig?: GameplayConfig | null, username?: string): void {
 
     const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const spacing = GAME_CONSTANTS.HEADER_SPACING;
-    const timerHeight = GAME_CONSTANTS.TIMER_HEIGHT;
 
-    // 1. Timer at the top (attached to screen)
-    this.createTimer(centerX);
-
-    // 2. Instruction below timer
-    const instructionY = timerHeight;
+    // 1. Instruction at the top
+    const instructionY = GAME_CONSTANTS.START_Y;
     this.createInstructionSection(centerX, instructionY + spacing, gameplayConfig);
 
-    // 3. Profile at the bottom (pivot from left)
-    const profileY = instructionY + this.getInstructionHeight(gameplayConfig) + (spacing * 6);
-    this.createProfileSection(profileY, gameplayConfig);
-  }
-
-  /**
-   * Get actual height for instruction section
-   */
-  private getInstructionHeight(gameplayConfig?: GameplayConfig | null): number {
-    // Create temporary text objects to measure actual height
-    const tempText1 = this.scene.add.text(0, 0,
-      'Arrange your skill and recommendation programme\nto complete your personalised career direction.', {
-      fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-      fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
-      fontStyle: '600',
-      align: 'center',
-      lineSpacing: 2,
-      wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
-    });
-    tempText1.setOrigin(0.5, 0);
-    tempText1.setResolution(2);
-
-    const tempText2 = this.scene.add.text(0, 0,
-      gameplayConfig?.instruction_text || '', {
-      fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-      fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
-      fontStyle: '600',
-      align: 'center',
-      wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH }
-    });
-    tempText2.setOrigin(0.5, 0);
-    tempText2.setResolution(2);
-
-    // Calculate total height
-    const text1Height = tempText1.height;
-    const text2Height = tempText2.height;
-    const spacing = GAME_CONSTANTS.INSTRUCTION_LINE_SPACING;
-    const totalHeight = text1Height + spacing + text2Height;
-
-    // Clean up temporary objects
-    tempText1.destroy();
-    tempText2.destroy();
-
-    return totalHeight;
-  }
-
-  /**
-   * Create timer display - full width attached to top
-   */
-  private createTimer(x: number): void {
-    // Create full-width timer background attached to top
-    const timerBg = this.scene.add.rectangle(
-      x,
-      GAME_CONSTANTS.TIMER_Y,
-      GAME_CONSTANTS.CANVAS_WIDTH,
-      GAME_CONSTANTS.TIMER_BACKGROUND_HEIGHT,
-      0xFFFFFF, 0.1
-    );
-    timerBg.setOrigin(0.5, 0.5);
-
-    // Create timer text
-    this.timerText = this.scene.add.text(
-      x,
-      GAME_CONSTANTS.TIMER_Y + 3, // Slightly offset from background center
-      '00:00',
-      {
-        fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
-        color: GAME_CONSTANTS.TIMER_COLOR_NORMAL,
-        fontStyle: '600',
-        align: 'center'
-      }
-    );
-    this.timerText.setOrigin(0.5, 0.5);
-    this.timerText.setResolution(2);
+    // 2. Profile at the bottom with timer (pivot from left)
+    const profileY = instructionY + 80 + (spacing * 6);
+    this.createProfileSection(profileY, gameplayConfig, username);
   }
 
   /**
@@ -193,7 +117,7 @@ export class UIManager {
   /**
    * Create profile section (pivot from left with margin distance)
    */
-  private createProfileSection(y: number, gameplayConfig?: GameplayConfig | null): void {
+  private createProfileSection(y: number, gameplayConfig?: GameplayConfig | null, username?: string): void {
     const profileSize = GAME_CONSTANTS.PROFILE_SIZE;
     const leftMargin = (GAME_CONSTANTS.CANVAS_WIDTH / 2) - (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
 
@@ -202,14 +126,16 @@ export class UIManager {
     profile.setDisplaySize(profileSize, profileSize);
     profile.setOrigin(0.5, 0.5);
 
+    const userName = username || 'John Doe';
+
     // Username to the right of profile
     const nameText = this.scene.add.text(
       leftMargin + profileSize + GAME_CONSTANTS.PROFILE_NAME_SPACING,
       y,
-      'John\nDoe',
+      userName.split(' ').join('\n'),
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: 'bold',
         lineSpacing: -5,
@@ -219,98 +145,40 @@ export class UIManager {
     nameText.setOrigin(0, 0.5); // Pivot from left center
     nameText.setResolution(2);
 
-    // Create progress slider on the right side
-    this.createProgressSlider(y);
+    // Create timer on the right side (where slider was)
+    this.createTimer(y);
   }
 
   /**
-   * Create progress slider (aligned to bottom of profile section)
+   * Create timer (aligned to right side of profile section)
    */
-  private createProgressSlider(profileY: number): void {
-    const sliderWidth = SLIDER_CONFIG.BACKGROUND_WIDTH;
-    const sliderHeight = SLIDER_CONFIG.BACKGROUND_HEIGHT;
-    const handleSize = SLIDER_CONFIG.HANDLE_SIZE;
+  private createTimer(profileY: number): void {
+    // Position timer at right edge, aligned with profile
+    const timerX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
+    const timerY = profileY;
 
-    // Position slider at bottom of profile, aligned to right edge
-    const sliderX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2) - sliderWidth;
-    const sliderY = profileY + (GAME_CONSTANTS.PROFILE_SIZE / 3); // Same as profile bottom (center)
+    // Create timer background
+    const timerBg = this.scene.add.image(timerX, timerY, 'timer_bg');
+    timerBg.setOrigin(1, 0.5); // Right center origin to align with text
+    timerBg.setScale(GAME_CONSTANTS.SCALE_FACTOR / 2); // Apply scale factor
 
-    // Background slider bar
-    this.slider.background = this.scene.add.image(sliderX, sliderY, 'slider_background');
-    this.slider.background.setDisplaySize(sliderWidth, sliderHeight);
-    this.slider.background.setOrigin(0, 0.5); // Left center origin
-
-    // Progress fill - use progress.png image with rounded mask
-    this.slider.progress = this.scene.add.image(sliderX, sliderY, 'slider_progress');
-    this.slider.progress.setDisplaySize(sliderWidth, sliderHeight); // Full width
-    this.slider.progress.setOrigin(0, 0.5); // Left center origin
-
-    // Create mask for rounded progress
-    const progressMask = this.scene.make.graphics({ x: 0, y: 0 });
-    progressMask.fillStyle(0xffffff);
-    progressMask.fillRoundedRect(sliderX, sliderY - (sliderHeight / 2), sliderWidth, sliderHeight, sliderHeight / 2);
-    this.slider.progress.setMask(progressMask.createGeometryMask());
-
-    // Handling (thumb) - positioned at the end of progress
-    this.slider.handling = this.scene.add.image(sliderX, sliderY, 'slider_handling');
-    this.slider.handling.setDisplaySize(handleSize, handleSize);
-    this.slider.handling.setOrigin(0.5, 0.5); // Center origin
-
-    // Progress text above slider - right aligned
-    this.slider.percentageText = this.scene.add.text(
-      sliderX + sliderWidth, // Right edge of slider
-      sliderY - 25, // 25px above slider
-      'Progress 0/4',
+    // Create timer text
+    this.timerText = this.scene.add.text(
+      timerX - 16,
+      timerY-2,
+      '00:00',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: SLIDER_CONFIG.PERCENTAGE_FONT_SIZE,
-        color: SLIDER_CONFIG.PERCENTAGE_COLOR,
+        fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        color: GAME_CONSTANTS.TIMER_COLOR_NORMAL,
         fontStyle: '600',
         align: 'right'
       }
     );
-    this.slider.percentageText.setOrigin(1, 0.5); // Right center origin for right alignment
-    this.slider.percentageText.setResolution(2);
+    this.timerText.setOrigin(1, 0.5); // Right center origin
+    this.timerText.setResolution(2);
   }
 
-  /**
-   * Update slider based on timer progress (0 = full, 1 = empty)
-   */
-  updateSlider(remainingSeconds: number, totalSeconds: number): void {
-    if (!this.slider.progress || !this.slider.handling || !this.slider.percentageText) return;
-
-    // Calculate progress (0 when timer at max, 1 when timer at 0)
-    const progress = 1 - (remainingSeconds / totalSeconds);
-
-    // Update progress mask width to show rounded progress
-    const fillWidth = SLIDER_CONFIG.BACKGROUND_WIDTH * progress;
-
-    // Update the mask to create rounded progress effect
-    const currentMask = this.slider.progress!.mask;
-    if (currentMask) {
-      const maskGraphics = this.scene.make.graphics({ x: 0, y: 0 });
-      maskGraphics.fillStyle(0xffffff);
-      maskGraphics.fillRoundedRect(
-        this.slider.background!.x,
-        this.slider.background!.y - (SLIDER_CONFIG.BACKGROUND_HEIGHT / 2),
-        fillWidth,
-        SLIDER_CONFIG.BACKGROUND_HEIGHT,
-        SLIDER_CONFIG.BACKGROUND_HEIGHT / 2
-      );
-      this.slider.progress!.setMask(maskGraphics.createGeometryMask());
-    }
-
-    // Update handling position
-    if (this.slider.background) {
-      const handleX = this.slider.background.x + fillWidth;
-      this.slider.handling!.x = handleX;
-    }
-
-    // Update progress text with quarters format
-    const percentage = Math.round(progress * 100);
-    const quarters = Math.round(progress * 4); // 0-4 quarters
-    this.slider.percentageText.setText(`Progress ${quarters}/4`);
-  }
 
   /**
    * Create instruction text section below header
@@ -323,7 +191,7 @@ export class UIManager {
     const instructionText1 = this.scene.add.text(
       centerX,
       instructionY,
-      'Arrange your skill and recommendation programme\nto complete your personalised career direction.',
+      'Arrange your skills and traits to find your fit',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
         fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
@@ -349,7 +217,7 @@ export class UIManager {
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
       centerX,
-      instructionY + instructionText1.height + GAME_CONSTANTS.INSTRUCTION_LINE_SPACING,
+      instructionY + instructionText1.height - 3,
       gameplayConfig?.instruction_text || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
@@ -382,8 +250,8 @@ export class UIManager {
     const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const buttonSize = GAME_CONSTANTS.BUTTON_SIZE;
     const spacing = GAME_CONSTANTS.BUTTON_SPACING;
-    const buttonY = GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + GAME_CONSTANTS.PLAY_AREA_HEIGHT + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + (buttonSize / 2) +  buttonSize;
-  
+    const buttonY = GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + GAME_CONSTANTS.PLAY_AREA_HEIGHT + GAME_CONSTANTS.BUTTON_DISTANCE_FROM_PLAY_AREA + (buttonSize / 2) + buttonSize;
+
     // Definisi button order (kiri ke kanan)
     const buttonDefinitions = [
       { key: 'skip', texture: 'button_skip' },

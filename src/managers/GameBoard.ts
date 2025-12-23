@@ -80,7 +80,10 @@ export class GameBoard {
     image.setAngle(tetromino.rotation);
     this.lockedTiles.add(image);
 
+    // Store original scale before animation
     const itemScale = image.scale;
+    (image as any).originalScale = itemScale;
+    
     this.scene.tweens.add({
       targets: image,
       scale: { from: itemScale, to: itemScale + 0.1 },
@@ -346,5 +349,26 @@ export class GameBoard {
    */
   getGrid(): GridTile[][] {
     return this.grid;
+  }
+
+  /**
+   * Get locked tiles container
+   */
+  getLockedTiles(): Phaser.GameObjects.Container {
+    return this.lockedTiles;
+  }
+
+  /**
+   * Get grid width
+   */
+  getGridWidth(): number {
+    return this.config.gridWidth;
+  }
+
+  /**
+   * Get grid height
+   */
+  getGridHeight(): number {
+    return this.config.gridHeight;
   }
 }
