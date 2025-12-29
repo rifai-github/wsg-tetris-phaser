@@ -873,32 +873,47 @@ export class TetrisScene extends Phaser.Scene {
       const width = GAME_CONSTANTS.PLAY_AREA_WIDTH;
       const height = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
 
+      // Resolution multiplier for higher quality (2x = double resolution)
+      const resolutionMultiplier = 2;
+
       // Capture specific area of the game
       this.game.renderer.snapshot((image: HTMLImageElement | Phaser.Display.Color) => {
       if (image instanceof HTMLImageElement) {
-        // Create canvas to crop the play area
+        // Create high-resolution canvas to crop the play area
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        canvas.width = width * resolutionMultiplier;
+        canvas.height = height * resolutionMultiplier;
+        const ctx = canvas.getContext('2d', { 
+          alpha: false,
+          desynchronized: false 
+        });
 
         if (ctx) {
-          // Draw only the play area portion
+          // Disable image smoothing for crisp, sharp pixels (no blur)
+          ctx.imageSmoothingEnabled = false;
+
+          // Draw only the play area portion with upscaling
           ctx.drawImage(
             image,
             x, y, width, height,  // Source rectangle (from full screenshot)
-            0, 0, width, height    // Destination rectangle (to canvas)
+            0, 0, canvas.width, canvas.height    // Destination rectangle (upscaled)
           );
 
-          // Convert to base64 data URL
-          const screenshotDataUrl = canvas.toDataURL('image/png');
+          // Convert to base64 data URL with maximum quality
+          // Quality parameter (0.0 to 1.0) - 1.0 is maximum quality
+          const screenshotDataUrl = canvas.toDataURL('image/png', 1.0);
 
           // Send screenshot to parent iframe via postMessage
           if (window.parent !== window) {
             window.parent.postMessage({
               type: 'PHASER_IMAGE',
               screenshot: screenshotDataUrl,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              resolution: {
+                width: canvas.width,
+                height: canvas.height,
+                multiplier: resolutionMultiplier
+              }
             }, '*');
           }
 
