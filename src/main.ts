@@ -18,7 +18,9 @@ const config: Phaser.Types.Core.GameConfig = {
     antialiasGL: true,
     pixelArt: false,
     roundPixels: false
-  }
+  },
+  // Handle high-DPI screens (iPhone, Samsung high-end)
+  resolution: window.devicePixelRatio || 1
 };
 
 new Phaser.Game(config);
