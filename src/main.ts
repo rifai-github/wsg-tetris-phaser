@@ -23,12 +23,15 @@ const config: Phaser.Types.Core.GameConfig = {
     roundPixels: false,
     powerPreference: 'high-performance',
     mipmapFilter: 'LINEAR_MIPMAP_LINEAR'
-  },
-  // Handle high-DPI screens (iPhone, Samsung high-end)
-  resolution: pixelRatio
+  }
 };
 
 const game = new Phaser.Game(config);
+
+// Set canvas resolution for high-DPI screens after game creation
+game.scale.setZoom(1 / pixelRatio);
+game.canvas.style.width = `${GAME_CONSTANTS.CANVAS_WIDTH}px`;
+game.canvas.style.height = `${GAME_CONSTANTS.CANVAS_HEIGHT}px`;
 
 // Force texture quality for all loaded textures
 game.events.once('ready', () => {
