@@ -252,7 +252,7 @@ export class TetrisScene extends Phaser.Scene {
       color: '#00FF00',
       backgroundColor: '#000000',
       padding: { x: 5, y: 5 },
-      resolution: Math.max(3, window.devicePixelRatio * 2)
+      resolution: window.devicePixelRatio || 2
     });
     this.debugText.setDepth(1001);
   }
