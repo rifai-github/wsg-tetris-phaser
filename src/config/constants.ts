@@ -33,7 +33,7 @@ export const GAME_CONSTANTS = {
   // Spacing (scaled for small screens)
   PLAY_AREA_TOP_MARGIN: Math.floor(250 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
   BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between play area bottom and button top
-  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
+  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
 
   // Drop speed
   DROP_INTERVAL: 1000, // 1 second

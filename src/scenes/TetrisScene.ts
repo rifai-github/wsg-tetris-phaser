@@ -132,9 +132,17 @@ export class TetrisScene extends Phaser.Scene {
    * Create - Initialize game
    */
   create(): void {
-    // Update board position dynamically based on actual canvas size
-    this.config.boardX = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
-    this.config.boardY = (GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + (GAME_CONSTANTS.MAX_TETROMINO_HEIGHT * this.config.tileSize * GAME_CONSTANTS.PREVIEW_SCALE / 2))
+    // Calculate actual grid size
+    const actualGridWidth = GAME_CONSTANTS.GRID_WIDTH * this.config.tileSize;
+    const actualGridHeight = GAME_CONSTANTS.GRID_HEIGHT * this.config.tileSize;
+
+    // Calculate centering offsets within play area
+    const horizontalOffset = (GAME_CONSTANTS.PLAY_AREA_WIDTH - actualGridWidth) / 2;
+    const verticalOffset = (GAME_CONSTANTS.PLAY_AREA_HEIGHT - actualGridHeight) / 2;
+
+    // Update board position: center play area + centering offset for grid
+    this.config.boardX = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2 + horizontalOffset;
+    this.config.boardY = (GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + (GAME_CONSTANTS.MAX_TETROMINO_HEIGHT * this.config.tileSize * GAME_CONSTANTS.PREVIEW_SCALE / 2)) + verticalOffset;
 
 
     // Initialize managers
@@ -243,7 +251,8 @@ export class TetrisScene extends Phaser.Scene {
       fontSize: '10px',
       color: '#00FF00',
       backgroundColor: '#000000',
-      padding: { x: 5, y: 5 }
+      padding: { x: 5, y: 5 },
+      resolution: 3
     });
     this.debugText.setDepth(1001);
   }
@@ -867,9 +876,10 @@ export class TetrisScene extends Phaser.Scene {
 
     // Wait a frame to ensure all changes are rendered
     this.time.delayedCall(50, () => {
-      // Calculate play area bounds
-      const x = this.config.boardX;
-      const y = this.config.boardY;
+      // Calculate play area bounds (original position without grid centering offset)
+      // Use the original play area coordinates, not the grid coordinates
+      const x = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
+      const y = (GAME_CONSTANTS.PLAY_AREA_TOP_MARGIN + (GAME_CONSTANTS.MAX_TETROMINO_HEIGHT * this.config.tileSize * GAME_CONSTANTS.PREVIEW_SCALE / 2));
       const width = GAME_CONSTANTS.PLAY_AREA_WIDTH;
       const height = GAME_CONSTANTS.PLAY_AREA_HEIGHT;
 

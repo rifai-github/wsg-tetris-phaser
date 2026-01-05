@@ -122,7 +122,7 @@ export class GameBoard {
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
-          resolution: 2
+          resolution: 3
         }
       );
       text.setOrigin(0.5);

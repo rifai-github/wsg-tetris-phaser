@@ -143,7 +143,7 @@ export class UIManager {
       }
     );
     nameText.setOrigin(0, 0.5); // Pivot from left center
-    nameText.setResolution(2);
+    nameText.setResolution(3);
 
     // Create timer on the right side (where slider was)
     this.createTimer(y);
@@ -176,7 +176,7 @@ export class UIManager {
       }
     );
     this.timerText.setOrigin(1, 0.5); // Right center origin
-    this.timerText.setResolution(2);
+    this.timerText.setResolution(3);
   }
 
 
@@ -212,7 +212,7 @@ export class UIManager {
       }
     );
     instructionText1.setOrigin(0.5, 0);
-    instructionText1.setResolution(2); // Higher resolution for sharper text
+    instructionText1.setResolution(3); // Higher resolution for sharper text
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
@@ -239,7 +239,7 @@ export class UIManager {
       }
     );
     instructionText2.setOrigin(0.5, 0);
-    instructionText2.setResolution(2); // Higher resolution for sharper text
+    instructionText2.setResolution(3); // Higher resolution for sharper text
   }
 
   /**

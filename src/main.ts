@@ -17,7 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: true,
     antialiasGL: true,
     pixelArt: false,
-    roundPixels: true
+    roundPixels: false
   }
 };
 

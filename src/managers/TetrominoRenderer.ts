@@ -160,6 +160,12 @@ export class TetrominoRenderer {
     const image = this.scene.add.image(0, 0, shapeKey);
     image.setDisplaySize(originalWidth * scale, originalHeight * scale);
     image.setAngle(tetromino.rotation); // Show the actual rotation
+    
+    // Ensure smooth, high-quality rendering for scaled images
+    if (image.texture) {
+      image.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+    
     container.add(image);
 
     // Render text labels WITH rotation (show actual spawn rotation)
@@ -178,11 +184,11 @@ export class TetrominoRenderer {
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: `${Math.floor(13 * scale * GAME_CONSTANTS.SCALE_FACTOR)}px`,
+          fontSize: `${Math.floor(14 * scale * GAME_CONSTANTS.SCALE_FACTOR)}px`,
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
-          resolution: 2
+          resolution: 3
         }
       );
       text.setOrigin(0.5);
