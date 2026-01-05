@@ -188,7 +188,7 @@ export class TetrominoRenderer {
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
-          resolution: 3
+          resolution: Math.max(3, window.devicePixelRatio * 2)
         }
       );
       text.setOrigin(0.5);
