@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation (393x852px) with an 8x9 grid system (44px tiles), featuring touch controls, countdown timer with slider, and skill-themed gameplay with multiple gameplay modes.
 
+**Note**: This project uses a custom parent frame integration pattern. The `parent-example.html` file in the root directory serves as a reference for iframe embedding and parent-window messaging.
+
 ## Development Commands
 
 ```bash
@@ -168,7 +170,7 @@ All asset paths centralized in [`constants.ts`](src/config/constants.ts):
 
 **Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:47 to see grid lines, bounding boxes, and shape info.
 
-**Text Rendering**: All text elements use 2x resolution (`setResolution(2)`) for sharp, clear display with enhanced shadow effects for improved readability.
+**Text Rendering**: All text elements use 2x resolution (`setResolution(2)`) with enhanced shadow effects (1px offset, 2px blur) for sharp, clear display with optimal readability against game backgrounds.
 
 ## TypeScript Types
 
@@ -187,14 +189,3 @@ Vite config uses:
 - Port 3000 for dev server (auto-increments if occupied)
 - TypeScript with strict mode enabled
 - ES2020 target with CommonJS modules
-
-## Text Rendering Enhancements
-
-All UI text elements utilize 2x resolution rendering (`setResolution(2)`) for crisp, sharp display quality:
-- **Timer Display**: Countdown timer with enhanced clarity
-- **Instruction Text**: Mode-specific instructions with shadow effects
-- **Progress Slider**: Progress text with sharp rendering
-- **Profile Section**: Username display with high definition
-- **Debug Text**: Development information with clear visibility
-
-Text elements include enhanced shadow effects with 1px offset, 2px blur, and proper padding for optimal readability against game backgrounds.
