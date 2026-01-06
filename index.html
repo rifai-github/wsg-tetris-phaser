@@ -3,16 +3,10 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>WSG Tetris Game</title>
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet" />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
             padding: 0;
@@ -23,39 +17,18 @@
             background-position: center center;
             background-attachment: fixed;
             z-index: -1;
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-
-        #game-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         /* Ensure canvas renders crisp and smooth on high-DPI screens */
         canvas {
-            display: block;
+            image-rendering: auto;
             image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-        }
-
-        @supports not (image-rendering: crisp-edges) {
-            canvas {
-                image-rendering: auto;
-            }
+            -ms-interpolation-mode: bicubic;
         }
     </style>
 </head>
 
 <body>
-    <div id="game-container"></div>
     <script type="module" src="/src/main.ts"></script>
 </body>
 
