@@ -7,31 +7,37 @@ const pixelRatio = Math.min(window.devicePixelRatio || 1, 3); // Cap at 3x for p
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL, // Force WebGL for better performance
-  width: GAME_CONSTANTS.CANVAS_WIDTH,
-  height: GAME_CONSTANTS.CANVAS_HEIGHT,
+  width: GAME_CONSTANTS.DESIGN_WIDTH * pixelRatio, // Multiply by pixel ratio for hires
+  height: GAME_CONSTANTS.DESIGN_HEIGHT * pixelRatio, // Multiply by pixel ratio for hires
   backgroundColor: GAME_CONSTANTS.BACKGROUND_COLOR,
   parent: 'game-container',
   scene: [TetrisScene],
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT, // Use FIT mode to maintain aspect ratio
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: GAME_CONSTANTS.DESIGN_WIDTH, // Logical width
+    height: GAME_CONSTANTS.DESIGN_HEIGHT, // Logical height
+    zoom: pixelRatio // Set zoom to pixel ratio for hires rendering
   },
   render: {
     antialias: true,
     antialiasGL: true,
-    pixelArt: false,
+    pixelArt: false, // Use smooth scaling for hires
     roundPixels: false,
     powerPreference: 'high-performance',
     mipmapFilter: 'LINEAR_MIPMAP_LINEAR'
+  },
+  callbacks: {
+    postBoot: (game: Phaser.Game) => {
+      // Set canvas resolution for high-DPI after boot
+      game.scale.setZoom(pixelRatio);
+      game.canvas.style.width = `${GAME_CONSTANTS.DESIGN_WIDTH}px`;
+      game.canvas.style.height = `${GAME_CONSTANTS.DESIGN_HEIGHT}px`;
+    }
   }
 };
 
 const game = new Phaser.Game(config);
-
-// Set canvas resolution for high-DPI screens after game creation
-game.scale.setZoom(1 / pixelRatio);
-game.canvas.style.width = `${GAME_CONSTANTS.CANVAS_WIDTH}px`;
-game.canvas.style.height = `${GAME_CONSTANTS.CANVAS_HEIGHT}px`;
 
 // Force texture quality for all loaded textures
 game.events.once('ready', () => {

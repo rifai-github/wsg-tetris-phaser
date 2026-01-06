@@ -7,14 +7,14 @@ const MIN_HEIGHT = 850;
 const SCALE_FACTOR = window.innerHeight < MIN_HEIGHT ? window.innerHeight / MIN_HEIGHT : 1;
 
 export const GAME_CONSTANTS = {
-  // Canvas size - Dynamic (responsive)
-  CANVAS_WIDTH: window.innerWidth,
-  CANVAS_HEIGHT: window.innerHeight,
-  
-  // Design Reference Resolution (untuk scaling calculations)
+  // Design Reference Resolution (fixed size untuk game logic)
   DESIGN_WIDTH: 393,
   DESIGN_HEIGHT: 852,
-  
+
+  // Canvas size - Dynamic (responsive) - untuk backward compatibility
+  CANVAS_WIDTH: window.innerWidth,
+  CANVAS_HEIGHT: window.innerHeight,
+
   // Scale factor for small screens
   SCALE_FACTOR: SCALE_FACTOR,
   MIN_HEIGHT: MIN_HEIGHT,
