@@ -4,15 +4,13 @@ import { GAME_CONSTANTS } from './config/constants';
 
 // Get device pixel ratio for high-DPI support (cap at 3 for performance)
 const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
+
 const config = {
   type: Phaser.WEBGL,
-
   width: GAME_CONSTANTS.CANVAS_WIDTH,
   height: GAME_CONSTANTS.CANVAS_HEIGHT,
-
   parent: 'game-container',
   backgroundColor: GAME_CONSTANTS.BACKGROUND_COLOR,
-
   scene: [TetrisScene],
 
   scale: {
@@ -23,12 +21,17 @@ const config = {
   render: {
     antialias: true,
     pixelArt: false,
-    roundPixels: false
+    roundPixels: false,
+    powerPreference: 'high-performance',
+    desynchronized: false
   },
 
-  // 👇 ini kunci tajam (lewati typings)
-  resolution: pixelRatio
-} as Phaser.Types.Core.GameConfig as any;
+  // High-DPI resolution
+  resolution: pixelRatio,
+
+  // Force WebGL 2 context for better text rendering
+  context: undefined as any // Let Phaser auto-detect, will prefer WebGL 2
+} as any;
 
 
 const game = new Phaser.Game(config);
