@@ -10,14 +10,14 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
   scene: [TetrisScene],
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   render: {
-    antialias: true,
+    antialias: false,
     antialiasGL: true,
-    pixelArt: false,
-    roundPixels: false
+    pixelArt: true,
+    roundPixels: true
   }
 };
 
