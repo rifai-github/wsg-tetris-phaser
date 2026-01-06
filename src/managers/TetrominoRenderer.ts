@@ -50,7 +50,7 @@ export class TetrominoRenderer {
 
     // Render text labels sesuai text_position
     const textRotation = this.getTextRotation(tetromino.rotation);
-    
+
     for (let i = 0; i < tetromino.shape.text_position.length; i++) {
       const [offsetX, offsetY] = tetromino.shape.text_position[i];
       const label = tetromino.labels[i] || tetromino.labels[0];
@@ -68,11 +68,11 @@ export class TetrominoRenderer {
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
-          resolution: 2
         }
       );
       text.setOrigin(0.5);
       text.setAngle(textRotation);
+      text.setResolution(window.devicePixelRatio || 2);
 
       this.container.add(text);
     }
@@ -160,12 +160,12 @@ export class TetrominoRenderer {
     const image = this.scene.add.image(0, 0, shapeKey);
     image.setDisplaySize(originalWidth * scale, originalHeight * scale);
     image.setAngle(tetromino.rotation); // Show the actual rotation
-    
+
     // Ensure smooth, high-quality rendering for scaled images
     if (image.texture) {
       image.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     }
-    
+
     container.add(image);
 
     // Render text labels WITH rotation (show actual spawn rotation)
@@ -188,11 +188,11 @@ export class TetrominoRenderer {
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
-          resolution: window.devicePixelRatio || 2
         }
       );
       text.setOrigin(0.5);
       text.setAngle(textRotation); // Show the actual text rotation
+      text.setResolution(window.devicePixelRatio || 2);
       container.add(text);
     }
 
@@ -577,7 +577,7 @@ export class TetrominoRenderer {
           const gridY = tetromino.y + row;
 
           if (gridY >= 0 && gridY < this.config.gridHeight &&
-              gridX >= 0 && gridX < this.config.gridWidth) {
+            gridX >= 0 && gridX < this.config.gridWidth) {
             // Count cells that would fill gaps (surrounded by filled cells)
             if (!grid[gridY][gridX]) {
               wouldFill++;
@@ -643,7 +643,7 @@ export class TetrominoRenderer {
     return completedLines;
   }
 
-  
+
   /**
    * Destroy prediction elements
    */

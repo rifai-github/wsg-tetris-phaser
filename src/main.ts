@@ -4,57 +4,32 @@ import { GAME_CONSTANTS } from './config/constants';
 
 // Get device pixel ratio for high-DPI support (cap at 3 for performance)
 const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
-
-const config: Phaser.Types.Core.GameConfig = {
+const config = {
   type: Phaser.WEBGL,
-  // Multiply by pixelRatio for true high-DPI rendering
-  width: GAME_CONSTANTS.CANVAS_WIDTH * pixelRatio,
-  height: GAME_CONSTANTS.CANVAS_HEIGHT * pixelRatio,
-  backgroundColor: GAME_CONSTANTS.BACKGROUND_COLOR,
+
+  width: GAME_CONSTANTS.CANVAS_WIDTH,
+  height: GAME_CONSTANTS.CANVAS_HEIGHT,
+
   parent: 'game-container',
+  backgroundColor: GAME_CONSTANTS.BACKGROUND_COLOR,
+
   scene: [TetrisScene],
 
   scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    zoom: 1 / pixelRatio, // Scale down to fit viewport
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
   },
 
   render: {
     antialias: true,
-    antialiasGL: true,
     pixelArt: false,
-    roundPixels: false,
-    powerPreference: 'high-performance',
-    mipmapFilter: 'LINEAR_MIPMAP_LINEAR'
+    roundPixels: false
   },
 
-  callbacks: {
-    postBoot: (game: Phaser.Game) => {
-      // Set canvas CSS size to viewport size
-      game.canvas.style.width = `${window.innerWidth}px`;
-      game.canvas.style.height = `${window.innerHeight}px`;
+  // 👇 ini kunci tajam (lewati typings)
+  resolution: pixelRatio
+} as Phaser.Types.Core.GameConfig as any;
 
-      // Log configuration for debugging
-      console.log('High-DPI Config:', {
-        devicePixelRatio: window.devicePixelRatio,
-        appliedPixelRatio: pixelRatio,
-        canvasBufferSize: {
-          width: game.canvas.width,
-          height: game.canvas.height
-        },
-        cssSize: {
-          width: game.canvas.style.width,
-          height: game.canvas.style.height
-        },
-        viewport: {
-          width: window.innerWidth,
-          height: window.innerHeight
-        }
-      });
-    }
-  }
-};
 
 const game = new Phaser.Game(config);
 
