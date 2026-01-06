@@ -160,7 +160,7 @@ export class UIManager {
     // Create timer background
     const timerBg = this.scene.add.image(timerX, timerY, 'timer_bg');
     timerBg.setOrigin(1, 0.5); // Right center origin to align with text
-    timerBg.setScale(GAME_CONSTANTS.SCALE_FACTOR / 2); // Apply scale factor
+    timerBg.setScale(GAME_CONSTANTS.SCALE_FACTOR); // Apply scale factor
 
     // Create timer text
     this.timerText = this.scene.add.text(
