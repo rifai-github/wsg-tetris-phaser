@@ -14,14 +14,14 @@ const config = {
   scene: [TetrisScene],
 
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.MAX_ZOOM,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
 
   render: {
     antialias: true,
     pixelArt: false,
-    roundPixels: false,
+    roundPixels: true,
     powerPreference: 'high-performance',
     desynchronized: false
   },

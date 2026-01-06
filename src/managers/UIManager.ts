@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GameConfig, GameplayConfig } from '../types';
-import { GAME_CONSTANTS, ASSET_PATHS, SLIDER_CONFIG } from '../config/constants';
+import { GAME_CONSTANTS } from '../config/constants';
 
 /**
  * UIManager - Mengelola UI elements (background, panel, profile, buttons, next shape preview)
@@ -135,7 +135,7 @@ export class UIManager {
       userName.split(' ').join('\n'),
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
         color: '#FFFFFF',
         fontStyle: 'bold',
         lineSpacing: -5,
@@ -143,7 +143,8 @@ export class UIManager {
       }
     );
     nameText.setOrigin(0, 0.5); // Pivot from left center
-    nameText.setResolution(window.devicePixelRatio || 2);
+    nameText.setScale(0.2);
+    // nameText.setResolution(window.devicePixelRatio || 2);
 
     // Create timer on the right side (where slider was)
     this.createTimer(y);
@@ -165,18 +166,19 @@ export class UIManager {
     // Create timer text
     this.timerText = this.scene.add.text(
       timerX - 16,
-      timerY-2,
+      timerY - 2,
       '00:00',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
         color: GAME_CONSTANTS.TIMER_COLOR_NORMAL,
         fontStyle: '600',
         align: 'right'
       }
     );
     this.timerText.setOrigin(1, 0.5); // Right center origin
-    this.timerText.setResolution(window.devicePixelRatio || 2);
+    this.timerText.setScale(0.2)
+    // Note: setResolution removed because canvas already handles pixelRatio zoom
   }
 
 
@@ -194,52 +196,32 @@ export class UIManager {
       'Arrange your skills and traits to find your fit',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
         color: '#FFFFFF',
         fontStyle: '600',
         align: 'center',
-        lineSpacing: 4,
-        wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH },
-        shadow: {
-          offsetX: 1,
-          offsetY: 1,
-          color: '#000000',
-          blur: 2,
-          stroke: true,
-          fill: true
-        },
-        padding: { x: 4, y: 2 }
       }
     );
     instructionText1.setOrigin(0.5, 0);
-    instructionText1.setResolution(window.devicePixelRatio || 2); // Match device pixel ratio
+    instructionText1.setScale(0.2);
+    // Note: setResolution removed because canvas already handles pixelRatio zoom
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
       centerX,
-      instructionY + instructionText1.height - 3,
+      (instructionY + (instructionText1.height * 0.2)),
       gameplayConfig?.instruction_text || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
         align: 'center',
-        lineSpacing: 4,
-        wordWrap: { width: GAME_CONSTANTS.INSTRUCTION_WORD_WRAP_WIDTH },
-        shadow: {
-          offsetX: 1,
-          offsetY: 1,
-          color: '#000000',
-          blur: 2,
-          stroke: true,
-          fill: true
-        },
-        padding: { x: 4, y: 2 }
       }
     );
     instructionText2.setOrigin(0.5, 0);
-    instructionText2.setResolution(window.devicePixelRatio || 2); // Match device pixel ratio
+    instructionText2.setScale(0.2);
+    // Note: setResolution removed because canvas already handles pixelRatio zoom
   }
 
   /**

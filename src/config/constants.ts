@@ -63,10 +63,10 @@ export const GAME_CONSTANTS = {
   BUTTON_SPACING: Math.floor(15 * SCALE_FACTOR),
 
   // UI Layout
-  SCREEN_CENTER_X: 196.5, // 393 / 2
-  SCREEN_CENTER_Y: 426, // 852 / 2
-  BACKGROUND_CENTER_X: 196.5, // 393 / 2
-  BACKGROUND_CENTER_Y: 426, // 852 / 2
+  SCREEN_CENTER_X: window.innerWidth / 2,
+  SCREEN_CENTER_Y: window.innerHeight / 2,
+  BACKGROUND_CENTER_X: window.innerWidth / 2,
+  BACKGROUND_CENTER_Y: window.innerHeight / 2,
 
   // Header section (scaled for small screens)
   HEADER_SPACING: Math.floor(8 * SCALE_FACTOR),
@@ -147,12 +147,4 @@ export const ASSET_PATHS = {
     SHAPES: '/shape_data.json',
     GAMEPLAY_CONFIG: '/gameplay_config.json',
   },
-};
-
-export const SLIDER_CONFIG = {
-  BACKGROUND_WIDTH: Math.floor(164 * SCALE_FACTOR),
-  BACKGROUND_HEIGHT: Math.floor(10 * SCALE_FACTOR),
-  HANDLE_SIZE: Math.floor(40 * SCALE_FACTOR),
-  PERCENTAGE_COLOR: '#C22C98',
-  PERCENTAGE_FONT_SIZE: Math.floor(12 * SCALE_FACTOR) + 'px',
 };

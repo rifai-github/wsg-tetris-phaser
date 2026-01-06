@@ -64,15 +64,16 @@ export class TetrominoRenderer {
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: Math.floor(13 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+          fontSize: Math.floor(13 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
         }
       );
       text.setOrigin(0.5);
+      text.setScale(0.2);
       text.setAngle(textRotation);
-      text.setResolution(window.devicePixelRatio || 2);
+      // Note: setResolution removed because canvas already handles pixelRatio zoom
 
       this.container.add(text);
     }
@@ -184,15 +185,16 @@ export class TetrominoRenderer {
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: `${Math.floor(14 * scale * GAME_CONSTANTS.SCALE_FACTOR)}px`,
+          fontSize: `${Math.floor(13 * scale * GAME_CONSTANTS.SCALE_FACTOR / 0.2)}px`,
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
         }
       );
       text.setOrigin(0.5);
+      text.setScale(0.2);
       text.setAngle(textRotation); // Show the actual text rotation
-      text.setResolution(window.devicePixelRatio || 2);
+      // Note: setResolution removed because canvas already handles pixelRatio zoom
       container.add(text);
     }
 
