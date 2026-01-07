@@ -13,9 +13,7 @@ const windowHeight = window.innerHeight;
 
 // Scale berdasarkan width agar full screen
 const scaleByWidth = windowWidth / DESIGN_WIDTH;
-
-// Scale berdasarkan height dengan 95% margin untuk safety
-const scaleByHeight = (windowHeight * 0.95) / DESIGN_HEIGHT;
+const scaleByHeight = windowHeight / DESIGN_HEIGHT;
 
 // Gunakan scale yang lebih kecil agar muat sempurna
 const SCALE_FACTOR = Math.min(scaleByWidth, scaleByHeight) * 2;
@@ -97,7 +95,7 @@ export const GAME_CONSTANTS = {
   // Tetromino list positioning - scaled agar proporsional
   TETROMINO_LIST_RIGHT_MARGIN: Math.floor(60 * SCALE_FACTOR), // 393 - startX = 60
 
-  TETROMINO_FONT_SIZE: 14 * SCALE_FACTOR,
+  TETROMINO_FONT_SIZE: 13 * SCALE_FACTOR,
 };
 
 export const ASSET_PATHS = {
