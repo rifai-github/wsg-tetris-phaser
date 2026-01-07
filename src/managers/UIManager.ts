@@ -88,7 +88,7 @@ export class UIManager {
     this.createInstructionSection(centerX, instructionY + spacing, gameplayConfig);
 
     // 2. Profile at the bottom with timer (pivot from left)
-    const profileY = (instructionY + 50 + (spacing * 6)) * GAME_CONSTANTS.SCALE_FACTOR;
+    const profileY = (instructionY + 60 + (spacing * 6));
     this.createProfileSection(profileY, gameplayConfig, username);
   }
 

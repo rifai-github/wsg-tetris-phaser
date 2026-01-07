@@ -18,7 +18,7 @@ const scaleByWidth = windowWidth / DESIGN_WIDTH;
 const scaleByHeight = (windowHeight * 0.95) / DESIGN_HEIGHT;
 
 // Gunakan scale yang lebih kecil agar muat sempurna
-const SCALE_FACTOR = Math.min(scaleByWidth, scaleByHeight);
+const SCALE_FACTOR = Math.min(scaleByWidth, scaleByHeight) * 2;
 
 export const GAME_CONSTANTS = {
   // Design Reference Resolution (fixed size untuk game logic)
@@ -27,8 +27,8 @@ export const GAME_CONSTANTS = {
 
   // Canvas size - Gunakan window width untuk full screen
   // Height akan menyesuaikan dengan aspect ratio
-  CANVAS_WIDTH: windowWidth,
-  CANVAS_HEIGHT: windowHeight,
+  CANVAS_WIDTH: windowWidth * 2,
+  CANVAS_HEIGHT: windowHeight * 2,
 
   // Scale factor untuk responsive scaling
   SCALE_FACTOR: SCALE_FACTOR,
