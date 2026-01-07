@@ -2,38 +2,52 @@
  * Game constants - Semua nilai konfigurasi game
  */
 
-// Calculate scale factor for small screens
-const MIN_HEIGHT = 850;
-const SCALE_FACTOR = (window.innerHeight * 2 < MIN_HEIGHT ? window.innerHeight * 2 / MIN_HEIGHT : 1 * 2);
+// Design Resolution - ukuran referensi untuk game logic
+const DESIGN_WIDTH = 393;
+const DESIGN_HEIGHT = 852;
+
+// Calculate scale factor untuk memastikan game SELALU muat dalam viewport
+// Prioritaskan width mengikuti screen, height menyesuaikan
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
+
+// Scale berdasarkan width agar full screen
+const scaleByWidth = windowWidth / DESIGN_WIDTH;
+
+// Scale berdasarkan height dengan 95% margin untuk safety
+const scaleByHeight = (windowHeight * 0.95) / DESIGN_HEIGHT;
+
+// Gunakan scale yang lebih kecil agar muat sempurna
+const SCALE_FACTOR = Math.min(scaleByWidth, scaleByHeight);
 
 export const GAME_CONSTANTS = {
   // Design Reference Resolution (fixed size untuk game logic)
-  DESIGN_WIDTH: 393,
-  DESIGN_HEIGHT: 852,
+  DESIGN_WIDTH: DESIGN_WIDTH,
+  DESIGN_HEIGHT: DESIGN_HEIGHT,
 
-  // Canvas size - Dynamic (responsive) - untuk backward compatibility
-  CANVAS_WIDTH: window.innerWidth * 2,
-  CANVAS_HEIGHT: window.innerHeight * 2,
+  // Canvas size - Gunakan window width untuk full screen
+  // Height akan menyesuaikan dengan aspect ratio
+  CANVAS_WIDTH: windowWidth,
+  CANVAS_HEIGHT: windowHeight,
 
-  // Scale factor for small screens
+  // Scale factor untuk responsive scaling
   SCALE_FACTOR: SCALE_FACTOR,
-  MIN_HEIGHT: MIN_HEIGHT,
 
-  // Tile size (scaled for small screens)
-  TILE_SIZE: Math.floor(44 * SCALE_FACTOR), // Updated to fit 353x397 play area with 8x9 grid
+  // Tile size - scaled agar proporsional
+  TILE_SIZE: Math.floor(44 * SCALE_FACTOR),
 
   // Grid dimensions
   GRID_WIDTH: 8,
   GRID_HEIGHT: 9,
 
-  // Play area dimensions and position (scaled for small screens)
+  // Play area dimensions and position - scaled agar proporsional
   PLAY_AREA_WIDTH: Math.floor(353 * SCALE_FACTOR),
   PLAY_AREA_HEIGHT: Math.floor(397 * SCALE_FACTOR),
 
-  // Spacing (scaled for small screens)
-  PLAY_AREA_TOP_MARGIN: Math.floor(220 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
-  BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR), // Distance between play area bottom and button top
-  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(15 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
+  // Spacing - scaled agar proporsional
+  PLAY_AREA_TOP_MARGIN: Math.floor(220 * SCALE_FACTOR),
+  BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR),
+  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(15 * SCALE_FACTOR),
 
   // Drop speed
   DROP_INTERVAL: 1000, // 1 second
@@ -53,38 +67,37 @@ export const GAME_CONSTANTS = {
   FONT_FAMILY: 'Nunito',
 
   // Next shape preview
-  NEXT_PREVIEW_START_X: 333, // Start from right side (393 - 60px margin)
+  NEXT_PREVIEW_START_X: Math.floor(333 * SCALE_FACTOR), // Start from right side
   MAX_TETROMINO_HEIGHT: 4, // Maximum height in tiles
   PREVIEW_SCALE: 0.65,
   PREVIEW_BASE_SPACING_MULTIPLIER: 0.5, // tile_size * scale * this value
 
-  // Control buttons (scaled for small screens)
+  // Control buttons - scaled agar proporsional
   BUTTON_SIZE: Math.floor(75 * SCALE_FACTOR),
   BUTTON_SPACING: Math.floor(12 * SCALE_FACTOR),
 
-  // UI Layout
-  SCREEN_CENTER_X: window.innerWidth / 2,
-  SCREEN_CENTER_Y: window.innerHeight / 2,
-  BACKGROUND_CENTER_X: window.innerWidth / 2,
-  BACKGROUND_CENTER_Y: window.innerHeight / 2,
+  // UI Layout - Gunakan actual window size
+  SCREEN_CENTER_X: windowWidth / 2,
+  SCREEN_CENTER_Y: windowHeight / 2,
+  BACKGROUND_CENTER_X: windowWidth / 2,
+  BACKGROUND_CENTER_Y: windowHeight / 2,
 
-  // Header section (scaled for small screens)
+  // Header section - scaled agar proporsional
   HEADER_SPACING: Math.floor(10 * SCALE_FACTOR),
   TIMER_HEIGHT: Math.floor(25 * SCALE_FACTOR),
   START_Y: Math.floor(20 * SCALE_FACTOR),
   TIMER_BACKGROUND_HEIGHT: Math.floor(40 * SCALE_FACTOR),
   INSTRUCTION_LINE_SPACING: Math.floor(1 * SCALE_FACTOR),
   PROFILE_SIZE: Math.floor(40 * SCALE_FACTOR),
-  // PROFILE_LEFT_MARGIN: 25,
   PROFILE_NAME_SPACING: Math.floor(10 * SCALE_FACTOR), // 10px spacing after profile
 
-  // Text wrapping
-  INSTRUCTION_WORD_WRAP_WIDTH: 373, // 393 - 20px margins
+  // Text wrapping - scaled agar proporsional
+  INSTRUCTION_WORD_WRAP_WIDTH: Math.floor(373 * SCALE_FACTOR), // 393 - 20px margins
 
-  // Tetromino list positioning
-  TETROMINO_LIST_RIGHT_MARGIN: 60, // 393 - startX = 60
+  // Tetromino list positioning - scaled agar proporsional
+  TETROMINO_LIST_RIGHT_MARGIN: Math.floor(60 * SCALE_FACTOR), // 393 - startX = 60
 
-  TETROMINO_FONT_SIZE: 15 * SCALE_FACTOR,
+  TETROMINO_FONT_SIZE: 14 * SCALE_FACTOR,
 };
 
 export const ASSET_PATHS = {

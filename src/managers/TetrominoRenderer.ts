@@ -59,11 +59,11 @@ export class TetrominoRenderer {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        Math.round(center.x + (rotatedOffset.x * 2)),
-        Math.round(center.y + (rotatedOffset.y * 2)),
+        Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
+        Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
         label,
         {
-          fontFamily: 'Nunito',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
           color: '#FFFFFF',
           align: 'center',
@@ -179,11 +179,11 @@ export class TetrominoRenderer {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        Math.round(rotatedOffset.x * scale * 2),
-        Math.round(rotatedOffset.y * scale * 2),
+        Math.round(rotatedOffset.x * scale * GAME_CONSTANTS.SCALE_FACTOR),
+        Math.round(rotatedOffset.y * scale * GAME_CONSTANTS.SCALE_FACTOR),
         label,
         {
-          fontFamily: 'Nunito',
+          fontFamily: '"Nunito", sans-serif',
           fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
           color: '#FFFFFF',
           align: 'center',

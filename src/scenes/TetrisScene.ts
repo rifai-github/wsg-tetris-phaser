@@ -247,7 +247,7 @@ export class TetrisScene extends Phaser.Scene {
     this.debugGraphics.setDepth(1000);
 
     this.debugText = this.add.text(10, 600, '', {
-      fontFamily: 'Nunito',
+      fontFamily: '"Nunito", sans-serif',
       fontSize: '10px',
       color: '#00FF00',
       backgroundColor: '#000000',

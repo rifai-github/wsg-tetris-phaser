@@ -88,7 +88,7 @@ export class UIManager {
     this.createInstructionSection(centerX, instructionY + spacing, gameplayConfig);
 
     // 2. Profile at the bottom with timer (pivot from left)
-    const profileY = instructionY + 80 + (spacing * 6);
+    const profileY = (instructionY + 50 + (spacing * 6)) * GAME_CONSTANTS.SCALE_FACTOR;
     this.createProfileSection(profileY, gameplayConfig, username);
   }
 
@@ -164,9 +164,9 @@ export class UIManager {
 
     // Create timer text
     this.timerText = this.scene.add.text(
-      timerX - 34,
-      timerY - 2,
-      '00:00',
+      timerX - 17 * GAME_CONSTANTS.SCALE_FACTOR,
+      timerY,
+      '00:00  ',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
         fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
