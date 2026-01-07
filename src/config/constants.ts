@@ -32,7 +32,7 @@ export const GAME_CONSTANTS = {
   SCALE_FACTOR: SCALE_FACTOR,
 
   // Tile size - scaled agar proporsional
-  TILE_SIZE: Math.floor(44 * SCALE_FACTOR),
+  TILE_SIZE: Math.floor(43 * SCALE_FACTOR),
 
   // Grid dimensions
   GRID_WIDTH: 8,

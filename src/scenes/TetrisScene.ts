@@ -430,16 +430,59 @@ export class TetrisScene extends Phaser.Scene {
     // Tambahkan shape baru di akhir queue
     this.nextTetrominos.push(this.shapeManager.generateRandomTetromino());
 
+    // Cari posisi spawn yang valid di baris paling atas
+    const spawnPosition = this.findValidSpawnInTopRow(this.currentTetromino);
+
+    if (spawnPosition === null) {
+      // Tidak ada posisi kosong di baris atas → GAME OVER
+      this.gameOver();
+      return;
+    }
+
+    // Set posisi spawn yang valid
+    this.currentTetromino.x = spawnPosition.x;
+    this.currentTetromino.y = spawnPosition.y;
+
     // Update next shape preview
     this.updateNextShapePreview();
 
     // Update prediction for new tetromino
     this.updatePrediction();
+  }
 
-    // Check if game over
-    if (!this.gameBoard.canPlace(this.currentTetromino)) {
-      this.gameOver();
+  /**
+   * Cari posisi spawn yang valid di baris paling atas (row 0)
+   * Priority: tengah → kiri → kanan
+   */
+  private findValidSpawnInTopRow(tetromino: Tetromino): { x: number; y: number } | null {
+    const matrix = tetromino.matrix;
+    const matrixWidth = matrix[0].length;
+    const spawnY = 0; // Selalu di baris paling atas
+
+    // Default spawn position: tengah secara horizontal
+    const defaultX = Math.floor((this.config.gridWidth - matrixWidth) / 2);
+
+    // Coba posisi default (tengah) di row 0
+    if (this.gameBoard.canPlace({ ...tetromino, x: defaultX, y: spawnY })) {
+      return { x: defaultX, y: spawnY };
     }
+
+    // Coba geser ke kiri (tetap di y=0)
+    for (let x = defaultX - 1; x >= 0; x--) {
+      if (this.gameBoard.canPlace({ ...tetromino, x, y: spawnY })) {
+        return { x, y: spawnY };
+      }
+    }
+
+    // Coba geser ke kanan (tetap di y=0)
+    for (let x = defaultX + 1; x <= this.config.gridWidth - matrixWidth; x++) {
+      if (this.gameBoard.canPlace({ ...tetromino, x, y: spawnY })) {
+        return { x, y: spawnY };
+      }
+    }
+
+    // Tidak ada posisi valid di row 0
+    return null;
   }
 
   /**
@@ -819,14 +862,6 @@ export class TetrisScene extends Phaser.Scene {
     // Destroy prediction before locking
     this.tetrominoRenderer.destroyPrediction();
 
-    // Check game over BEFORE locking to prevent rendering last tetromino
-    if (this.gameBoard.isGameOver()) {
-      // Destroy current tetromino renderer without locking it
-      this.tetrominoRenderer.destroy();
-      this.gameOver();
-      return;
-    }
-
     // Lock ke board
     this.gameBoard.lockTetromino(this.currentTetromino);
 
@@ -839,7 +874,7 @@ export class TetrisScene extends Phaser.Scene {
     // Clear completed lines
     // const linesCleared = this.gameBoard.clearLines();
 
-    // Spawn next tetromino
+    // Spawn next tetromino (smart spawn will check if there's valid position)
     this.spawnNextTetromino();
   }
 
@@ -848,9 +883,6 @@ export class TetrisScene extends Phaser.Scene {
    */
   private gameOver(): void {
     this.isGameActive = false;
-
-    // // Fade out BGM before capturing screenshot
-    // this.stopBGM();
 
     // Capture screenshot of play area and send to parent iframe
     this.capturePlayAreaScreenshot();
@@ -889,7 +921,7 @@ export class TetrisScene extends Phaser.Scene {
     });
 
     // Wait a frame to ensure all changes are rendered
-    this.time.delayedCall(50, () => {
+    this.time.delayedCall(500, () => {
       // Calculate play area bounds (original position without grid centering offset)
       // Use the original play area coordinates, not the grid coordinates
       const x = (this.cameras.main.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
