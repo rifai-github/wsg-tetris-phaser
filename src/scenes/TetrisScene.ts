@@ -126,6 +126,10 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('shape_s_prediction', ASSET_PATHS.SHAPES_PREDICTION.S);
     this.load.image('shape_t_prediction', ASSET_PATHS.SHAPES_PREDICTION.T);
     this.load.image('shape_z_prediction', ASSET_PATHS.SHAPES_PREDICTION.Z);
+
+    // Load audio files
+    this.load.audio('bgm', ASSET_PATHS.AUDIO.BGM);
+    this.load.audio('blockSfx', ASSET_PATHS.AUDIO.BLOCK_SFX);
   }
 
   /**
@@ -360,6 +364,10 @@ export class TetrisScene extends Phaser.Scene {
     });
 
     // Listen for animation complete
+
+    // Play BGM when game starts
+    this.playBGM();
+
     this.lottieAnimation.addEventListener('complete', () => {
       this.finishCountdown();
     });
@@ -822,6 +830,9 @@ export class TetrisScene extends Phaser.Scene {
     // Lock ke board
     this.gameBoard.lockTetromino(this.currentTetromino);
 
+    // Play block SFX when tetromino locks
+    this.playBlockSFX();
+
     // Destroy renderer container
     this.tetrominoRenderer.destroy();
 
@@ -837,6 +848,9 @@ export class TetrisScene extends Phaser.Scene {
    */
   private gameOver(): void {
     this.isGameActive = false;
+
+    // // Fade out BGM before capturing screenshot
+    // this.stopBGM();
 
     // Capture screenshot of play area and send to parent iframe
     this.capturePlayAreaScreenshot();
@@ -933,5 +947,46 @@ export class TetrisScene extends Phaser.Scene {
         }
       });
     });
+  }
+
+  /**
+   * Play BGM when game starts
+   */
+  private playBGM(): void {
+    // Stop existing BGM if playing
+    const bgm = this.sound.get('bgm');
+    if (bgm && bgm.isPlaying) {
+      bgm.stop();
+    }
+
+    // Play BGM with loop
+    this.sound.play('bgm', {
+      volume: 0.5, // 50% volume
+      loop: true,
+    });
+  }
+
+  /**
+   * Stop BGM when game ends
+   */
+  private stopBGM(): void {
+    const bgm = this.sound.get('bgm');
+
+    if (bgm && bgm.isPlaying) {
+      bgm.stop();
+    }
+  }
+
+  /**
+   * Play Block SFX when tetromino locks to board
+   */
+  private playBlockSFX(): void {
+    // Play block SFX without loop (one-shot)
+    this.sound.play('blockSfx', {
+      volume: 0.7, // 70% volume untuk SFX lebih jelas
+      loop: false, // One-shot sound
+    });
+
+    console.log('🔊 Block SFX played');
   }
 }

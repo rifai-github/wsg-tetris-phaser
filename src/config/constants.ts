@@ -160,4 +160,10 @@ export const ASSET_PATHS = {
     SHAPES: '/shape_data.json',
     GAMEPLAY_CONFIG: '/gameplay_config.json',
   },
+
+  // Audio Files
+  AUDIO: {
+    BGM: '/audio/BGM.mp3',
+    BLOCK_SFX: '/audio/Block SFX.mp3',
+  },
 };
