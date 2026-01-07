@@ -4,7 +4,7 @@
 
 // Calculate scale factor for small screens
 const MIN_HEIGHT = 850;
-const SCALE_FACTOR = window.innerHeight < MIN_HEIGHT ? window.innerHeight / MIN_HEIGHT : 1;
+const SCALE_FACTOR = (window.innerHeight * 2 < MIN_HEIGHT ? window.innerHeight * 2 / MIN_HEIGHT : 1 * 2);
 
 export const GAME_CONSTANTS = {
   // Design Reference Resolution (fixed size untuk game logic)
@@ -12,8 +12,8 @@ export const GAME_CONSTANTS = {
   DESIGN_HEIGHT: 852,
 
   // Canvas size - Dynamic (responsive) - untuk backward compatibility
-  CANVAS_WIDTH: window.innerWidth,
-  CANVAS_HEIGHT: window.innerHeight,
+  CANVAS_WIDTH: window.innerWidth * 2,
+  CANVAS_HEIGHT: window.innerHeight * 2,
 
   // Scale factor for small screens
   SCALE_FACTOR: SCALE_FACTOR,
@@ -31,9 +31,9 @@ export const GAME_CONSTANTS = {
   PLAY_AREA_HEIGHT: Math.floor(397 * SCALE_FACTOR),
 
   // Spacing (scaled for small screens)
-  PLAY_AREA_TOP_MARGIN: Math.floor(250 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
-  BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between play area bottom and button top
-  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
+  PLAY_AREA_TOP_MARGIN: Math.floor(220 * SCALE_FACTOR), // Distance from play area bottom to screen bottom
+  BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR), // Distance between play area bottom and button top
+  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(15 * SCALE_FACTOR), // Distance between tetromino list bottom and play area top
 
   // Drop speed
   DROP_INTERVAL: 1000, // 1 second
@@ -59,8 +59,8 @@ export const GAME_CONSTANTS = {
   PREVIEW_BASE_SPACING_MULTIPLIER: 0.5, // tile_size * scale * this value
 
   // Control buttons (scaled for small screens)
-  BUTTON_SIZE: Math.floor(70 * SCALE_FACTOR),
-  BUTTON_SPACING: Math.floor(15 * SCALE_FACTOR),
+  BUTTON_SIZE: Math.floor(75 * SCALE_FACTOR),
+  BUTTON_SPACING: Math.floor(12 * SCALE_FACTOR),
 
   // UI Layout
   SCREEN_CENTER_X: window.innerWidth / 2,
@@ -69,7 +69,7 @@ export const GAME_CONSTANTS = {
   BACKGROUND_CENTER_Y: window.innerHeight / 2,
 
   // Header section (scaled for small screens)
-  HEADER_SPACING: Math.floor(8 * SCALE_FACTOR),
+  HEADER_SPACING: Math.floor(10 * SCALE_FACTOR),
   TIMER_HEIGHT: Math.floor(25 * SCALE_FACTOR),
   START_Y: Math.floor(20 * SCALE_FACTOR),
   TIMER_BACKGROUND_HEIGHT: Math.floor(40 * SCALE_FACTOR),
@@ -83,6 +83,8 @@ export const GAME_CONSTANTS = {
 
   // Tetromino list positioning
   TETROMINO_LIST_RIGHT_MARGIN: 60, // 393 - startX = 60
+
+  TETROMINO_FONT_SIZE: 15 * SCALE_FACTOR,
 };
 
 export const ASSET_PATHS = {

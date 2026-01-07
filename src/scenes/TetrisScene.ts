@@ -154,7 +154,7 @@ export class TetrisScene extends Phaser.Scene {
     // Load shape and gameplay data
     const shapeData = this.cache.json.get('shapeData') as ShapeData[];
     const gameplayConfigData = this.cache.json.get('gameplayConfig') as GameplayConfig[];
-    
+
     // Listen for scale resize to update board position
     // this.scale.on('resize', (gameSize: any) => {
     //   this.config.boardX = (gameSize.width - GAME_CONSTANTS.PLAY_AREA_WIDTH) / 2;
@@ -167,13 +167,13 @@ export class TetrisScene extends Phaser.Scene {
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type') || 'explorer'; // Default to explorer
-    
+
     // Get timer duration from query param or use default
     const timerParam = urlParams.get('timer');
     const timerDuration = timerParam ? parseInt(timerParam, 10) : GAME_CONSTANTS.COUNTDOWN_DURATION;
     this.constGameTime = timerDuration;
     this.gameTimer = timerDuration;
-    
+
     // Get username from query param or use default
     const username = urlParams.get('username') || undefined;
 
@@ -331,7 +331,7 @@ export class TetrisScene extends Phaser.Scene {
     const updatePosition = () => {
       const canvas = this.game.canvas;
       const canvasRect = canvas.getBoundingClientRect();
-      
+
       // Center in actual canvas position (responsive to scale)
       this.lottieContainer.style.left = `${canvasRect.left + (canvasRect.width - containerSize) / 2}px`;
       this.lottieContainer.style.top = `${canvasRect.top + (canvasRect.height - containerSize) / 2}px`;
@@ -759,9 +759,9 @@ export class TetrisScene extends Phaser.Scene {
     for (let attempt = 0; attempt < maxAttempts && !validShapeFound; attempt++) {
       // Generate a random tetromino
       const randomTetromino = this.shapeManager.generateRandomTetromino();
-      
+
       // Try each rotation angle for this shape
-      const rotationsToTry = randomTetromino.shape.shape_name === 'o' 
+      const rotationsToTry = randomTetromino.shape.shape_name === 'o'
         ? [0] // O shape only needs 0 rotation
         : rotations;
 
@@ -888,50 +888,50 @@ export class TetrisScene extends Phaser.Scene {
 
       // Capture specific area of the game
       this.game.renderer.snapshot((image: HTMLImageElement | Phaser.Display.Color) => {
-      if (image instanceof HTMLImageElement) {
-        // Create high-resolution canvas to crop the play area
-        const canvas = document.createElement('canvas');
-        canvas.width = width * resolutionMultiplier;
-        canvas.height = height * resolutionMultiplier;
-        const ctx = canvas.getContext('2d', { 
-          alpha: false,
-          desynchronized: false 
-        });
+        if (image instanceof HTMLImageElement) {
+          // Create high-resolution canvas to crop the play area
+          const canvas = document.createElement('canvas');
+          canvas.width = width * resolutionMultiplier;
+          canvas.height = height * resolutionMultiplier;
+          const ctx = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: false
+          });
 
-        if (ctx) {
-          // Disable image smoothing for crisp, sharp pixels (no blur)
-          ctx.imageSmoothingEnabled = false;
+          if (ctx) {
+            // Disable image smoothing for crisp, sharp pixels (no blur)
+            ctx.imageSmoothingEnabled = false;
 
-          // Draw only the play area portion with upscaling
-          ctx.drawImage(
-            image,
-            x, y, width, height,  // Source rectangle (from full screenshot)
-            0, 0, canvas.width, canvas.height    // Destination rectangle (upscaled)
-          );
+            // Draw only the play area portion with upscaling
+            ctx.drawImage(
+              image,
+              x, y, width, height,  // Source rectangle (from full screenshot)
+              0, 0, canvas.width, canvas.height    // Destination rectangle (upscaled)
+            );
 
-          // Convert to base64 data URL with maximum quality
-          // Quality parameter (0.0 to 1.0) - 1.0 is maximum quality
-          const screenshotDataUrl = canvas.toDataURL('image/png', 1.0);
+            // Convert to base64 data URL with maximum quality
+            // Quality parameter (0.0 to 1.0) - 1.0 is maximum quality
+            const screenshotDataUrl = canvas.toDataURL('image/png', 1.0);
 
-          // Send screenshot to parent iframe via postMessage
-          if (window.parent !== window) {
-            window.parent.postMessage({
-              type: 'PHASER_IMAGE',
-              screenshot: screenshotDataUrl,
-              timestamp: new Date().toISOString(),
-              resolution: {
-                width: canvas.width,
-                height: canvas.height,
-                multiplier: resolutionMultiplier
-              }
-            }, '*');
+            // Send screenshot to parent iframe via postMessage
+            if (window.parent !== window) {
+              window.parent.postMessage({
+                type: 'PHASER_IMAGE',
+                screenshot: screenshotDataUrl,
+                timestamp: new Date().toISOString(),
+                resolution: {
+                  width: canvas.width,
+                  height: canvas.height,
+                  multiplier: resolutionMultiplier
+                }
+              }, '*');
+            }
+
+            // Also store in window object for direct access if needed
+            (window as any).tetrisGameOverScreenshot = screenshotDataUrl;
           }
-
-          // Also store in window object for direct access if needed
-          (window as any).tetrisGameOverScreenshot = screenshotDataUrl;
         }
-      }
-    });
+      });
     });
   }
 }

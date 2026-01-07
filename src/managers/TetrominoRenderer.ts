@@ -59,19 +59,18 @@ export class TetrominoRenderer {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        Math.round(center.x + rotatedOffset.x),
-        Math.round(center.y + rotatedOffset.y),
+        Math.round(center.x + (rotatedOffset.x * 2)),
+        Math.round(center.y + (rotatedOffset.y * 2)),
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: Math.floor(13 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
+          fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
         }
       );
       text.setOrigin(0.5);
-      text.setScale(0.2);
       text.setAngle(textRotation);
       // Note: setResolution removed because canvas already handles pixelRatio zoom
 
@@ -180,19 +179,18 @@ export class TetrominoRenderer {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        Math.round(rotatedOffset.x * scale),
-        Math.round(rotatedOffset.y * scale),
+        Math.round(rotatedOffset.x * scale * 2),
+        Math.round(rotatedOffset.y * scale * 2),
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: `${Math.floor(13 * scale * GAME_CONSTANTS.SCALE_FACTOR / 0.2)}px`,
+          fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
         }
       );
       text.setOrigin(0.5);
-      text.setScale(0.2);
       text.setAngle(textRotation); // Show the actual text rotation
       // Note: setResolution removed because canvas already handles pixelRatio zoom
       container.add(text);

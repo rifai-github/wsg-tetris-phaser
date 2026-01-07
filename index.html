@@ -3,15 +3,19 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WSG Tetris Game</title>
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet" />
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Nunito', sans-serif;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Nunito', sans-serif;
             background: url('/images/background.png') center/cover no-repeat fixed;
             background-size: cover;
             background-position: center center;
@@ -22,14 +26,12 @@
         /* Ensure canvas renders crisp and smooth on high-DPI screens */
         canvas {
             display: block;
-            image-rendering: auto;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
     </style>
 </head>
 
 <body>
+    <div id="game-container"></div>
     <script type="module" src="/src/main.ts"></script>
 </body>
 

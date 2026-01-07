@@ -34,8 +34,8 @@ export class UIManager {
    */
   setupUI(gameplayConfig?: GameplayConfig | null, username?: string): void {
     this.createBackground();
-    this.createPlayAreaPanel();
     this.createHeaderSection(gameplayConfig, username);
+    this.createPlayAreaPanel();
     this.createControlButtons(gameplayConfig);
   }
 
@@ -135,7 +135,7 @@ export class UIManager {
       userName.split(' ').join('\n'),
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
+        fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: 'bold',
         lineSpacing: -5,
@@ -143,7 +143,6 @@ export class UIManager {
       }
     );
     nameText.setOrigin(0, 0.5); // Pivot from left center
-    nameText.setScale(0.2);
     // nameText.setResolution(window.devicePixelRatio || 2);
 
     // Create timer on the right side (where slider was)
@@ -165,19 +164,18 @@ export class UIManager {
 
     // Create timer text
     this.timerText = this.scene.add.text(
-      timerX - 16,
+      timerX - 34,
       timerY - 2,
       '00:00',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
+        fontSize: Math.floor(32 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: GAME_CONSTANTS.TIMER_COLOR_NORMAL,
         fontStyle: '600',
         align: 'right'
       }
     );
     this.timerText.setOrigin(1, 0.5); // Right center origin
-    this.timerText.setScale(0.2)
     // Note: setResolution removed because canvas already handles pixelRatio zoom
   }
 
@@ -196,31 +194,29 @@ export class UIManager {
       'Arrange your skills and traits to find your fit',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: '600',
         align: 'center',
       }
     );
     instructionText1.setOrigin(0.5, 0);
-    instructionText1.setScale(0.2);
     // Note: setResolution removed because canvas already handles pixelRatio zoom
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
       centerX,
-      (instructionY + (instructionText1.height * 0.2)),
+      (instructionY + instructionText1.height),
       gameplayConfig?.instruction_text || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR / 0.2) + 'px',
+        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
         align: 'center',
       }
     );
     instructionText2.setOrigin(0.5, 0);
-    instructionText2.setScale(0.2);
     // Note: setResolution removed because canvas already handles pixelRatio zoom
   }
 

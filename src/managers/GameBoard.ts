@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Tetromino, GridTile, GameConfig, Direction } from '../types';
+import { GAME_CONSTANTS } from '../config/constants';
 
 /**
  * GameBoard - Mengelola grid system, collision detection, dan line clearing
@@ -83,17 +84,17 @@ export class GameBoard {
     // Store original scale before animation
     const itemScale = image.scale;
     (image as any).originalScale = itemScale;
-    
+
     this.scene.tweens.add({
       targets: image,
-      scale: { from: itemScale, to: itemScale + 0.1 },
+      scale: { from: itemScale, to: itemScale + 0.2 },
       duration: 150,
       ease: 'Back.easeOut',
       onComplete: () => {
         image.setTexture(colorKey);
         this.scene.tweens.add({
           targets: image,
-          scale: { from: itemScale + 0.1, to: itemScale },
+          scale: { from: itemScale + 0.2, to: itemScale },
           duration: 150,
           ease: 'Back.easeIn',
           onComplete: () => {
@@ -113,12 +114,12 @@ export class GameBoard {
       const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
       const text = this.scene.add.text(
-        Math.round(center.x + rotatedOffset.x),
-        Math.round(center.y + rotatedOffset.y),
+        Math.round(center.x + (rotatedOffset.x * 2)),
+        Math.round(center.y + (rotatedOffset.y * 2)),
         label,
         {
           fontFamily: 'Nunito',
-          fontSize: '13px',
+          fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
           color: '#FFFFFF',
           align: 'center',
           fontStyle: 'bold',
