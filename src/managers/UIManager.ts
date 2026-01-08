@@ -143,7 +143,7 @@ export class UIManager {
       }
     );
     nameText.setOrigin(0, 0.5); // Pivot from left center
-    // nameText.setResolution(window.devicePixelRatio || 2);
+    nameText.setResolution(2);
 
     // Create timer on the right side (where slider was)
     this.createTimer(y);
@@ -176,7 +176,7 @@ export class UIManager {
       }
     );
     this.timerText.setOrigin(1, 0.5); // Right center origin
-    // Note: setResolution removed because canvas already handles pixelRatio zoom
+    this.timerText.setResolution(2);
   }
 
 
@@ -201,7 +201,7 @@ export class UIManager {
       }
     );
     instructionText1.setOrigin(0.5, 0);
-    // Note: setResolution removed because canvas already handles pixelRatio zoom
+    instructionText1.setResolution(2);
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
@@ -217,7 +217,7 @@ export class UIManager {
       }
     );
     instructionText2.setOrigin(0.5, 0);
-    // Note: setResolution removed because canvas already handles pixelRatio zoom
+    instructionText2.setResolution(2);
   }
 
   /**

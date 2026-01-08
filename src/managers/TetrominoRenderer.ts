@@ -72,7 +72,7 @@ export class TetrominoRenderer {
       );
       text.setOrigin(0.5);
       text.setAngle(textRotation);
-      // Note: setResolution removed because canvas already handles pixelRatio zoom
+      text.setResolution(2);
 
       this.container.add(text);
     }
