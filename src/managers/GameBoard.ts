@@ -87,14 +87,14 @@ export class GameBoard {
 
     this.scene.tweens.add({
       targets: image,
-      scale: { from: itemScale, to: itemScale + 0.2 },
+      scale: { from: itemScale, to: itemScale + 0.1 },
       duration: 150,
       ease: 'Back.easeOut',
       onComplete: () => {
         image.setTexture(colorKey);
         this.scene.tweens.add({
           targets: image,
-          scale: { from: itemScale + 0.2, to: itemScale },
+          scale: { from: itemScale + 0.1, to: itemScale },
           duration: 150,
           ease: 'Back.easeIn',
           onComplete: () => {
