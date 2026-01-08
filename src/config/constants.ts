@@ -67,7 +67,7 @@ export const GAME_CONSTANTS = {
   // Next shape preview
   NEXT_PREVIEW_START_X: Math.floor(333 * SCALE_FACTOR), // Start from right side
   MAX_TETROMINO_HEIGHT: 4, // Maximum height in tiles
-  PREVIEW_SCALE: 0.65,
+  PREVIEW_SCALE: 0.85,
   PREVIEW_BASE_SPACING_MULTIPLIER: 0.5, // tile_size * scale * this value
 
   // Control buttons - scaled agar proporsional
