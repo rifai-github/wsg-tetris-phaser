@@ -128,7 +128,6 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('shape_z_prediction', ASSET_PATHS.SHAPES_PREDICTION.Z);
 
     // Load audio files
-    this.load.audio('bgm', ASSET_PATHS.AUDIO.BGM);
     this.load.audio('blockSfx', ASSET_PATHS.AUDIO.BLOCK_SFX);
   }
 
@@ -367,9 +366,6 @@ export class TetrisScene extends Phaser.Scene {
     });
 
     // Listen for animation complete
-
-    // Play BGM when game starts
-    this.playBGM();
 
     this.lottieAnimation.addEventListener('complete', () => {
       this.finishCountdown();
@@ -969,34 +965,6 @@ export class TetrisScene extends Phaser.Scene {
         }
       });
     });
-  }
-
-  /**
-   * Play BGM when game starts
-   */
-  private playBGM(): void {
-    // Stop existing BGM if playing
-    const bgm = this.sound.get('bgm');
-    if (bgm && bgm.isPlaying) {
-      bgm.stop();
-    }
-
-    // Play BGM with loop
-    this.sound.play('bgm', {
-      volume: 0.5, // 50% volume
-      loop: true,
-    });
-  }
-
-  /**
-   * Stop BGM when game ends
-   */
-  private stopBGM(): void {
-    const bgm = this.sound.get('bgm');
-
-    if (bgm && bgm.isPlaying) {
-      bgm.stop();
-    }
   }
 
   /**
