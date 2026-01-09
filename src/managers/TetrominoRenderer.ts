@@ -49,32 +49,36 @@ export class TetrominoRenderer {
     this.container.add(image);
 
     // Render text labels sesuai text_position
+    // Hanya render sebanyak jumlah labels yang tersedia
     const textRotation = this.getTextRotation(tetromino.rotation);
 
-    for (let i = 0; i < tetromino.shape.text_position.length; i++) {
-      const [offsetX, offsetY] = tetromino.shape.text_position[i];
-      const label = tetromino.labels[i] || tetromino.labels[0];
+    for (let i = 0; i < tetromino.labels.length; i++) {
+      // Cek jika text_position tersedia untuk index ini
+      if (i < tetromino.shape.text_position.length) {
+        const [offsetX, offsetY] = tetromino.shape.text_position[i];
+        const label = tetromino.labels[i];
 
-      // Rotate offset position sesuai shape rotation
-      const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
+        // Rotate offset position sesuai shape rotation
+        const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
-      const text = this.scene.add.text(
-        Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
-        Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
-        label,
-        {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
-          color: '#FFFFFF',
-          align: 'center',
-          fontStyle: 'bold',
-        }
-      );
-      text.setOrigin(0.5);
-      text.setAngle(textRotation);
-      text.setResolution(2);
+        const text = this.scene.add.text(
+          Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
+          Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
+          label,
+          {
+            fontFamily: '"Nunito", sans-serif',
+            fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
+            color: '#FFFFFF',
+            align: 'center',
+            fontStyle: 'bold',
+          }
+        );
+        text.setOrigin(0.5);
+        text.setAngle(textRotation);
+        text.setResolution(2);
 
-      this.container.add(text);
+        this.container.add(text);
+      }
     }
 
     return this.container;
@@ -169,31 +173,35 @@ export class TetrominoRenderer {
     container.add(image);
 
     // Render text labels WITH rotation (show actual spawn rotation)
+    // Hanya render sebanyak jumlah labels yang tersedia
     const textRotation = this.getTextRotation(tetromino.rotation);
 
-    for (let i = 0; i < tetromino.shape.text_position.length; i++) {
-      const [offsetX, offsetY] = tetromino.shape.text_position[i];
-      const label = tetromino.labels[i] || tetromino.labels[0];
+    for (let i = 0; i < tetromino.labels.length; i++) {
+      // Cek jika text_position tersedia untuk index ini
+      if (i < tetromino.shape.text_position.length) {
+        const [offsetX, offsetY] = tetromino.shape.text_position[i];
+        const label = tetromino.labels[i];
 
-      // Rotate offset position sesuai shape rotation
-      const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
+        // Rotate offset position sesuai shape rotation
+        const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
-      const text = this.scene.add.text(
-        Math.round(rotatedOffset.x * scale * GAME_CONSTANTS.SCALE_FACTOR),
-        Math.round(rotatedOffset.y * scale * GAME_CONSTANTS.SCALE_FACTOR),
-        label,
-        {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
-          color: '#FFFFFF',
-          align: 'center',
-          fontStyle: 'bold',
-        }
-      );
-      text.setOrigin(0.5);
-      text.setAngle(textRotation); // Show the actual text rotation
-      // Note: setResolution removed because canvas already handles pixelRatio zoom
-      container.add(text);
+        const text = this.scene.add.text(
+          Math.round(rotatedOffset.x * scale * GAME_CONSTANTS.SCALE_FACTOR),
+          Math.round(rotatedOffset.y * scale * GAME_CONSTANTS.SCALE_FACTOR),
+          label,
+          {
+            fontFamily: '"Nunito", sans-serif',
+            fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
+            color: '#FFFFFF',
+            align: 'center',
+            fontStyle: 'bold',
+          }
+        );
+        text.setOrigin(0.5);
+        text.setAngle(textRotation); // Show the actual text rotation
+        text.setResolution(2);
+        container.add(text);
+      }
     }
 
     return container;

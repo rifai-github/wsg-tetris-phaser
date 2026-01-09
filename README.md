@@ -17,7 +17,10 @@ The game supports 4 different gameplay modes via URL parameter `?type=<mode>`:
 - **Skip Button**: Bypass unfittable pieces
 
 ### Adapter Mode (`?type=adapter`)
-- **Switch Function**: Swap current tetromino with next one
+- **Switch Function**: Swap current tetromino shape with random shape (including S & Z)
+- **Label Preservation**: Labels remain unchanged when switching shapes
+- **Random Rotation**: Each switch generates random rotation (0°, 90°, 180°, or 270°)
+- **Shape Filtering**: Next tetrominos exclude S & Z shapes (only 5 shapes instead of 7)
 - **Flexibility Training**: Adapt to changing circumstances
 - **Switch Button**: Exchange current piece for better fit
 
@@ -58,15 +61,25 @@ wsg-tetris-game/
 ## Features
 
 ### Core Gameplay
-- **Portrait Mode**: Optimized for mobile (393x852px)
-- **Grid System**: 8×9 tiles with 44px sizing (353x397px play area)
-- **Countdown Timer**: 10-second timer with color-coded warnings
+- **Portrait Mode**: Optimized for mobile with responsive scaling
+- **Grid System**: 8×9 tiles with dynamic sizing based on screen size
+- **Countdown Timer**: Configurable timer with color-coded warnings (default: 10 seconds)
 - **Progress Slider**: Real-time visual progress indicator in quarters format
 - **Skill Labels**: Each tetromino displays workforce skills
-- **Smart Text**: S & Z shapes show two-word labels when available
-- **Text Rotation**: Follows shape rotation (180° stays upright)
+- **Smart Text System**:
+  - S & Z shapes show two-word labels when available
+  - Other shapes show single-word labels
+  - Labels adjust based on shape type during switch
+- **Text Rotation**: Follows shape rotation (180° stays upright for readability)
 - **7-Shape Preview**: Horizontal preview aligned with play area edge
 - **Touch Controls**: Mobile-friendly button interface
+- **Smart Spawn System**:
+  - Finds valid spawn position in top row (center → left → right)
+  - Game over only when no valid spawn position exists
+- **Audio System**:
+  - Background music (BGM) loops during gameplay
+  - Block SFX plays when tetromino locks to board
+  - BGM stops when game over
 
 ### Advanced Features
 - **Dynamic Play Areas**: Different backgrounds per gameplay mode
@@ -102,8 +115,8 @@ npm run preview
 
 ### Mode-Specific Controls
 - **Explorer Mode**: No additional buttons (prediction automatic)
-- **Builder Mode**: Skip button to bypass current piece
-- **Adapter Mode**: Switch button to swap with next piece
+- **Builder Mode**: Skip button to bypass current piece without locking
+- **Adapter Mode**: Switch button to transform current shape to random shape with random rotation
 - **Innovator Mode**: Rotate button for enhanced rotation
 
 ### Debug Controls
@@ -128,13 +141,22 @@ Edit `public/gameplay_config.json` to customize modes:
 ### Game Settings
 Modify game parameters in [`constants.ts`](src/config/constants.ts):
 ```typescript
-TILE_SIZE: 44,                          // Size of each grid tile
-CANVAS_WIDTH: 393, CANVAS_HEIGHT: 852,  // Screen dimensions
+TILE_SIZE: Dynamic based on screen size,  // Calculated from SCALE_FACTOR
+CANVAS_WIDTH: window.innerWidth * 2,     // Responsive width
+CANVAS_HEIGHT: window.innerHeight * 2,   // Responsive height
 PLAY_AREA_WIDTH: 353, PLAY_AREA_HEIGHT: 397, // Play area dimensions
-BOARD_X: 20, BOARD_Y: 319,             // Play area positioning
-COUNTDOWN_DURATION: 10,                // Timer in seconds
-DROP_INTERVAL: 1000,                    // Drop speed (ms)
+BOARD_X: Dynamic, BOARD_Y: Dynamic,       // Calculated for centering
+COUNTDOWN_DURATION: 10,                   // Timer in seconds (configurable via URL)
+DROP_INTERVAL: 1000,                      // Drop speed (ms)
 ```
+
+### URL Parameters
+Customize gameplay via query parameters:
+- `?type=<mode>`: Select gameplay mode (explorer, builder, adapter, innovator)
+- `?timer=<seconds>`: Set custom countdown duration (default: 10)
+- `?username=<name>`: Display custom username in profile section
+
+Example: `game.html?type=adapter&timer=15&username=John`
 
 ### Labels Database
 Add new skills labels in `public/label_block.json`:
@@ -204,11 +226,39 @@ The explorer mode uses a sophisticated six-factor scoring system:
 ## Development Notes
 
 - **Text Positioning**: Defined per-shape in `shape_data.json` as `[x, y]` offsets
+  - S and Z shapes have 2 text positions for two-word labels
+  - Other shapes have 1 text position
 - **Dynamic Loading**: Play area images loaded based on gameplay mode
 - **Prediction Safety**: AI avoids suggesting game-over positions
-- **Mobile Optimized**: Touch controls and portrait layout
+- **Mobile Optimized**: Touch controls and responsive layout
+  - Canvas scales to fit screen while maintaining aspect ratio
+  - TILE_SIZE calculated from SCALE_FACTOR for consistency
 - **Performance**: Efficient rendering with texture caching
-- **Enhanced Text Rendering**: All UI text uses 2x resolution for crisp, sharp display with shadow effects for improved readability
+- **Enhanced Text Rendering**:
+  - All UI text uses 2x resolution (`setResolution(2)`)
+  - Font family includes fallback: `"Nunito", sans-serif`
+  - Shadow effects for improved readability
+- **Font Loading**: Preloads Google Fonts before Phaser initialization to prevent race condition
+- **Shape Filtering**:
+  - Adapter mode excludes S and Z shapes from next tetromino pool
+  - Switch function can generate all shapes including S and Z
+  - Uses separate `generateRandomTetrominoForSwitch()` method
+- **Smart Spawn Logic**:
+  - Searches for valid position in top row (priority: center → left → right)
+  - Game over only when no valid spawn position exists
+  - Prevents premature game over with intelligent positioning
+- **Game Over Conditions**:
+  1. Timer reaches 0 seconds
+  2. No valid spawn position available in top row
+- **Audio System**:
+  - BGM starts after countdown animation (50% volume, loop)
+  - Block SFX plays on tetromino lock (70% volume, one-shot)
+  - BGM stops when game over occurs
+- **Switch Mechanics**:
+  - Preserves current labels when changing shapes
+  - Generates random shape with random rotation
+  - Labels adjust based on target shape's text position count
+  - Can switch from any shape to any shape (including S and Z)
 
 ## Browser Support
 

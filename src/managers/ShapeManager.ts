@@ -7,8 +7,16 @@ export class ShapeManager {
   private shapeData: ShapeData[] = [];
   private labelData: string[] = [];
   private usedLabels: Set<string> = new Set();
+  private currentGameplayType: string = '';
 
   constructor() {}
+
+  /**
+   * Set current gameplay type (untuk filter shape tertentu)
+   */
+  setGameplayType(type: string): void {
+    this.currentGameplayType = type;
+  }
 
   /**
    * Load shape data dari JSON
@@ -26,6 +34,7 @@ export class ShapeManager {
 
   /**
    * Generate random tetromino with random rotation
+   * Untuk next tetromino (terfilter berdasarkan gameplay mode)
    */
   generateRandomTetromino(): Tetromino {
     const randomShape = this.getRandomShape();
@@ -58,9 +67,63 @@ export class ShapeManager {
   }
 
   /**
+   * Generate random tetromino tanpa filter (untuk switch)
+   * Bisa menghasilkan SEMUA shape termasuk S dan Z
+   */
+  generateRandomTetrominoForSwitch(): Tetromino {
+    const randomShape = this.getRandomShapeForSwitch();
+    const labels = this.getLabelsForShape(randomShape);
+
+    // Generate random rotation (0, 90, 180, 270)
+    const rotations = [0, 90, 180, 270];
+    const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
+
+    // Skip rotation for O shape since it doesn't need it
+    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+
+    // Apply rotation to matrix if needed
+    let matrix = this.cloneMatrix(randomShape.matrix);
+    let currentRotation = finalRotation;
+
+    // Rotate matrix to match the rotation angle
+    for (let i = 0; i < (finalRotation / 90); i++) {
+      matrix = this.rotateMatrix(matrix);
+    }
+
+    return {
+      shape: randomShape,
+      x: Math.floor(4 - matrix[0].length / 2), // Center horizontal based on rotated matrix
+      y: 0,
+      rotation: finalRotation,
+      matrix: matrix,
+      labels: labels
+    };
+  }
+
+  /**
    * Get random shape dari shape data
+   * Di adapter mode, filter shape S dan Z
    */
   private getRandomShape(): ShapeData {
+    // Filter shape berdasarkan gameplay type
+    let availableShapes = this.shapeData;
+
+    if (this.currentGameplayType === 'adapter') {
+      // Di adapter mode, exclude shape S dan Z
+      availableShapes = this.shapeData.filter(shape =>
+        shape.shape_name !== 's' && shape.shape_name !== 'z'
+      );
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableShapes.length);
+    return availableShapes[randomIndex];
+  }
+
+  /**
+   * Get random shape tanpa filter (untuk switch)
+   * Mengembalikan SEMUA shape termasuk S dan Z
+   */
+  private getRandomShapeForSwitch(): ShapeData {
     const randomIndex = Math.floor(Math.random() * this.shapeData.length);
     return this.shapeData[randomIndex];
   }

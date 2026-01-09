@@ -104,31 +104,35 @@ export class GameBoard {
     });
 
     // Create permanent text labels
+    // Hanya render sebanyak jumlah labels yang tersedia
     const textRotation = this.getTextRotation(tetromino.rotation);
 
-    for (let i = 0; i < tetromino.shape.text_position.length; i++) {
-      const [offsetX, offsetY] = tetromino.shape.text_position[i];
-      const label = tetromino.labels[i] || tetromino.labels[0];
+    for (let i = 0; i < tetromino.labels.length; i++) {
+      // Cek jika text_position tersedia untuk index ini
+      if (i < tetromino.shape.text_position.length) {
+        const [offsetX, offsetY] = tetromino.shape.text_position[i];
+        const label = tetromino.labels[i];
 
-      // Rotate offset position sesuai shape rotation
-      const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
+        // Rotate offset position sesuai shape rotation
+        const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
-      const text = this.scene.add.text(
-        Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
-        Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
-        label,
-        {
-          fontFamily: '"Nunito", sans-serif',
-          fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
-          color: '#FFFFFF',
-          align: 'center',
-          fontStyle: 'bold',
-          resolution: window.devicePixelRatio || 2
-        }
-      );
-      text.setOrigin(0.5);
-      text.setAngle(textRotation);
-      this.lockedTiles.add(text);
+        const text = this.scene.add.text(
+          Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
+          Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
+          label,
+          {
+            fontFamily: '"Nunito", sans-serif',
+            fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
+            color: '#FFFFFF',
+            align: 'center',
+            fontStyle: 'bold',
+            resolution: window.devicePixelRatio || 2
+          }
+        );
+        text.setOrigin(0.5);
+        text.setAngle(textRotation);
+        this.lockedTiles.add(text);
+      }
     }
 
     // Mark grid cells as filled

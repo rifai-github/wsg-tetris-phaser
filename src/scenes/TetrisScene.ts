@@ -184,6 +184,9 @@ export class TetrisScene extends Phaser.Scene {
     // Find current gameplay config based on URL parameter
     this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
 
+    // Set gameplay type ke ShapeManager untuk filter shape
+    this.shapeManager.setGameplayType(typeParam);
+
     // Load play area image dynamically if specified, otherwise use default
     const playAreaPath = this.currentGameplayConfig?.play_area || ASSET_PATHS.DEFAULT_PLAY_AREA;
 
@@ -798,47 +801,34 @@ export class TetrisScene extends Phaser.Scene {
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
 
-    // Save current position
+    // Save current position dan labels (jangan ganti labels!)
     const currentX = this.currentTetromino.x;
     const currentY = this.currentTetromino.y;
+    const currentLabels = this.currentTetromino.labels;
 
     // Try to find a valid shape that can fit at current position
-    const rotations = [0, 90, 180, 270];
-    const maxAttempts = 20; // Try up to 20 different shape+rotation combinations
+    const maxAttempts = 20; // Try up to 20 different random tetrominos
     let validShapeFound = false;
 
     for (let attempt = 0; attempt < maxAttempts && !validShapeFound; attempt++) {
-      // Generate a random tetromino
-      const randomTetromino = this.shapeManager.generateRandomTetromino();
+      // Generate a random tetromino dengan random rotation (termasuk S dan Z untuk switch)
+      const randomTetromino = this.shapeManager.generateRandomTetrominoForSwitch();
 
-      // Try each rotation angle for this shape
-      const rotationsToTry = randomTetromino.shape.shape_name === 'o'
-        ? [0] // O shape only needs 0 rotation
-        : rotations;
+      // Gunakan rotation yang sudah di-random dari generateRandomTetrominoForSwitch()
+      const testTetromino = {
+        shape: randomTetromino.shape,
+        x: currentX,
+        y: currentY,
+        rotation: randomTetromino.rotation,
+        matrix: randomTetromino.matrix,
+        labels: currentLabels // Gunakan label dari tetromino yang sedang aktif
+      };
 
-      for (const rotation of rotationsToTry) {
-        // Apply rotation to matrix
-        let rotatedMatrix = randomTetromino.shape.matrix;
-        for (let i = 0; i < rotation / 90; i++) {
-          rotatedMatrix = this.shapeManager.rotateMatrix(rotatedMatrix);
-        }
-
-        // Create test tetromino with current position
-        const testTetromino = {
-          shape: randomTetromino.shape,
-          x: currentX,
-          y: currentY,
-          rotation: rotation,
-          matrix: rotatedMatrix,
-          labels: randomTetromino.labels
-        };
-
-        // Check if this shape+rotation can be placed at current position
-        if (this.gameBoard.canPlace(testTetromino)) {
-          this.currentTetromino = testTetromino;
-          validShapeFound = true;
-          break;
-        }
+      // Check if this shape+rotation can be placed at current position
+      if (this.gameBoard.canPlace(testTetromino)) {
+        this.currentTetromino = testTetromino;
+        validShapeFound = true;
+        break;
       }
     }
 
@@ -849,7 +839,7 @@ export class TetrisScene extends Phaser.Scene {
       return;
     }
 
-    // Update prediction for new tetromino shape
+    // Update prediction untuk new tetromino shape
     this.updatePrediction();
   }
 
