@@ -180,11 +180,29 @@ export class TetrisScene extends Phaser.Scene {
     // Get username from query param or use default
     const username = urlParams.get('username') || undefined;
 
+    // Get suggested_skills from query parameter
+    // Format: ?suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%5D = ["Agile","Adaptable"]
+    const suggestedSkillsParam = urlParams.get('suggested_skills');
+    let suggestedSkills: string[] = [];
+    if (suggestedSkillsParam) {
+      try {
+        // Decode URL-encoded JSON array
+        suggestedSkills = JSON.parse(decodeURIComponent(suggestedSkillsParam));
+        console.log('Suggested skills loaded:', suggestedSkills);
+      } catch (e) {
+        console.error('Failed to parse suggested_skills parameter:', e);
+        console.log('Using fallback labels from shape_data.json');
+      }
+    }
+
     // Find current gameplay config based on URL parameter
     this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
 
     // Set gameplay type ke ShapeManager untuk filter shape
     this.shapeManager.setGameplayType(typeParam);
+
+    // Set suggested skills from URL parameter
+    this.shapeManager.setSuggestedSkills(suggestedSkills);
 
     // Load play area image dynamically if specified, otherwise use default
     const playAreaPath = this.currentGameplayConfig?.play_area || ASSET_PATHS.DEFAULT_PLAY_AREA;

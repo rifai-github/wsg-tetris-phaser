@@ -8,6 +8,20 @@ WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills 
 
 **Note**: This project uses a custom parent frame integration pattern. The `parent-example.html` file in the root directory serves as a reference for iframe embedding and parent-window messaging.
 
+### Parent Frame Integration
+
+The game supports iframe embedding with parent-window messaging via PostMessage API:
+
+**Game → Parent Messages:**
+- `PHASER_IMAGE`: Sent on game over, contains base64 screenshot data and timestamp
+- Message format: `{ type: 'PHASER_IMAGE', screenshot: string, timestamp: number }`
+
+**Parent → Game Messages:**
+- `restart`: Triggers game restart from parent application
+- Message format: `{ type: 'restart' }`
+
+Reference implementation in `parent-example.html` demonstrates screenshot capture and restart functionality.
+
 ## Development Commands
 
 ```bash
@@ -24,6 +38,8 @@ npm run build
 npm run preview
 ```
 
+**Note**: This project does not have configured test scripts or linting tools.
+
 ## Gameplay Modes
 
 The game supports 4 different gameplay modes controlled via URL parameter `?type=<mode>`:
@@ -34,6 +50,15 @@ The game supports 4 different gameplay modes controlled via URL parameter `?type
 - **Innovator** (`?type=innovator`): Includes rotate button for enhanced rotation control
 
 Each mode is configured via [`gameplay_config.json`](public/gameplay_config.json) with custom play area images, instruction text, colors, and special features.
+
+### URL Parameters
+
+Customize gameplay via query parameters:
+- `?type=<mode>`: Select gameplay mode (explorer, builder, adapter, innovator)
+- `?timer=<seconds>`: Set custom countdown duration (default: 10)
+- `?username=<name>`: Display custom username in profile section
+
+Example: `game.html?type=adapter&timer=15&username=John`
 
 ## Architecture
 
@@ -103,6 +128,20 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 
 **Auto Restart**: Game automatically restarts 3 seconds after game over
 
+**Smart Spawn System**: Finds valid spawn position in top row (center → left → right). Game over only when no valid spawn position exists, preventing premature game over.
+
+**Switch Mechanics** (Adapter Mode):
+- Preserves current labels when changing shapes
+- Generates random shape with random rotation (0°, 90°, 180°, or 270°)
+- Labels adjust based on target shape's text position count
+- Can switch from any shape to any shape (including S and Z)
+- Next tetromino pool excludes S and Z shapes (only 5 shapes)
+
+**Audio System**:
+- Background music (BGM) loops during gameplay (50% volume)
+- Block SFX plays when tetromino locks to board (70% volume)
+- BGM stops when game over occurs
+
 ## Configuration
 
 ### Gameplay Configuration
@@ -168,9 +207,15 @@ All asset paths centralized in [`constants.ts`](src/config/constants.ts):
 - 0 seconds: Red urgent
 - Auto game over when timer reaches 0
 
+**Game Over Conditions**:
+1. Timer reaches 0 seconds
+2. No valid spawn position available in top row
+
 **Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:47 to see grid lines, bounding boxes, and shape info.
 
 **Text Rendering**: All text elements use 2x resolution (`setResolution(2)`) with enhanced shadow effects (1px offset, 2px blur) for sharp, clear display with optimal readability against game backgrounds.
+
+**Font Loading**: Google Fonts (Nunito) preloads before Phaser initialization to prevent race conditions and ensure consistent text rendering.
 
 ## TypeScript Types
 
@@ -189,3 +234,10 @@ Vite config uses:
 - Port 3000 for dev server (auto-increments if occupied)
 - TypeScript with strict mode enabled
 - ES2020 target with CommonJS modules
+
+## Dependencies
+
+- **phaser**: ^3.90.0 - Game framework and rendering engine
+- **lottie-web**: ^5.13.0 - Animation library (available but may not be actively used)
+- **typescript**: ^5.9.3 - Type-safe development
+- **vite**: ^7.2.4 - Fast build tool and dev server

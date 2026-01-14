@@ -8,6 +8,8 @@ export class ShapeManager {
   private labelData: string[] = [];
   private usedLabels: Set<string> = new Set();
   private currentGameplayType: string = '';
+  private suggestedSkills: string[] = [];
+  private currentSkillIndex: number = 0;
 
   constructor() {}
 
@@ -16,6 +18,14 @@ export class ShapeManager {
    */
   setGameplayType(type: string): void {
     this.currentGameplayType = type;
+  }
+
+  /**
+   * Set suggested skills from URL parameter
+   */
+  setSuggestedSkills(skills: string[]): void {
+    this.suggestedSkills = skills;
+    this.currentSkillIndex = 0;
   }
 
   /**
@@ -130,14 +140,22 @@ export class ShapeManager {
 
   /**
    * Get labels untuk shape berdasarkan jumlah text_position
+   * Prioritas: suggested_skills dari URL parameter > shape.label dari JSON
    */
   private getLabelsForShape(shape: ShapeData): string[] {
     const labels: string[] = [];
     const textPositionCount = shape.text_position.length;
-    const availableLabels = shape.label || []; // Get labels from shape
+
+    // Gunakan suggested_skills jika tersedia, fallback ke shape.label
+    let availableLabels: string[] = [];
+    if (this.suggestedSkills.length > 0) {
+      availableLabels = this.suggestedSkills;
+    } else {
+      availableLabels = shape.label || []; // Fallback ke shape.label dari JSON
+    }
 
     if (availableLabels.length === 0) {
-      return ['Label']; // Fallback if no labels available
+      return ['Label']; // Fallback jika tidak ada labels available
     }
 
     // Jika ada 2 text position (S dan Z), coba ambil 2-word label
@@ -146,13 +164,13 @@ export class ShapeManager {
       if (twoWordLabel) {
         labels.push(...twoWordLabel);
       } else {
-        // Fallback: ambil 2 label berbeda dari shape.label
-        labels.push(this.getRandomLabelFromArray(availableLabels));
-        labels.push(this.getRandomLabelFromArray(availableLabels));
+        // Fallback: ambil 2 label berbeda
+        labels.push(this.getNextLabelFromArray(availableLabels));
+        labels.push(this.getNextLabelFromArray(availableLabels));
       }
     } else {
-      // Shape lain: 1 label dari shape.label
-      labels.push(this.getRandomLabelFromArray(availableLabels));
+      // Shape lain: 1 label
+      labels.push(this.getNextLabelFromArray(availableLabels));
     }
 
     return labels;
@@ -172,15 +190,23 @@ export class ShapeManager {
   }
 
   /**
-   * Get random label dari array yang diberikan
+   * Get next label secara berurutan dari array (sequential cycling)
+   * Untuk suggested_skills dari URL parameter, ini akan memastikan semua skills digunakan
    */
-  private getRandomLabelFromArray(labels: string[]): string {
+  private getNextLabelFromArray(labels: string[]): string {
     if (labels.length === 0) {
       return 'Label';
     }
-    
+
+    // Gunakan suggestedSkills, ambil secara berurutan dan cycle
+    if (this.suggestedSkills.length > 0 && labels === this.suggestedSkills) {
+      const label = this.suggestedSkills[this.currentSkillIndex];
+      this.currentSkillIndex = (this.currentSkillIndex + 1) % this.suggestedSkills.length;
+      return label;
+    }
+
+    // Fallback untuk shape.label dari JSON: ambil random
     const randomLabel = labels[Math.floor(Math.random() * labels.length)];
-    
     return randomLabel;
   }
 
