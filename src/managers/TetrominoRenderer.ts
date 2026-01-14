@@ -18,6 +18,21 @@ export class TetrominoRenderer {
   }
 
   /**
+   * Calculate max text width berdasarkan matrix shape (untuk auto-size)
+   */
+  private calculateMaxTextWidth(matrix: number[][], shapeName: string): number {
+    // Hitung maksimum jumlah tile dalam satu baris
+    const maxTilesInRow = Math.max(...matrix.map(row =>
+      row.reduce((sum, cell) => sum + cell, 0)
+    ));
+
+    // Max width = jumlah tile × ukuran tile
+    // Kurangi 15% untuk padding dari garis luar tile
+    const rawWidth = maxTilesInRow * this.config.tileSize;
+    return rawWidth * 0.85; // 85% dari width actual
+  }
+
+  /**
    * Render tetromino sebagai 1 complete image + text labels
    * Uses outline image for active (falling) tetromino
    */
@@ -61,21 +76,41 @@ export class TetrominoRenderer {
         // Rotate offset position sesuai shape rotation
         const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
+        // Hitung max text width untuk auto-size (gunakan matrix ASLI sebelum rotation)
+        const maxTextWidth = this.calculateMaxTextWidth(tetromino.shape.matrix, tetromino.shape.shape_name);
+
+        // Setup text config
+        const textConfig: Phaser.Types.GameObjects.Text.TextStyle = {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
+          color: '#FFFFFF',
+          align: 'center',
+          fontStyle: 'bold',
+        };
+
+        // Khusus shape O: gunakan word wrap jika text ada spasi
+        if (tetromino.shape.shape_name === 'o' && label.includes(' ')) {
+          textConfig.wordWrap = { width: maxTextWidth };
+        }
+
         const text = this.scene.add.text(
           Math.round(center.x + (rotatedOffset.x * GAME_CONSTANTS.SCALE_FACTOR)),
           Math.round(center.y + (rotatedOffset.y * GAME_CONSTANTS.SCALE_FACTOR)),
           label,
-          {
-            fontFamily: '"Nunito", sans-serif',
-            fontSize: Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE) + 'px',
-            color: '#FFFFFF',
-            align: 'center',
-            fontStyle: 'bold',
-          }
+          textConfig
         );
         text.setOrigin(0.5);
         text.setAngle(textRotation);
         text.setResolution(2);
+
+        // Auto-scale untuk semua shape jika text terlalu lebar
+        // (Kecuali shape O dengan word wrap, karena sudah di-handle oleh wordWrap)
+        if (!(tetromino.shape.shape_name === 'o' && label.includes(' '))) {
+          if (text.width > maxTextWidth) {
+            const scale = maxTextWidth / text.width;
+            text.setScale(scale);
+          }
+        }
 
         this.container.add(text);
       }
@@ -185,21 +220,42 @@ export class TetrominoRenderer {
         // Rotate offset position sesuai shape rotation
         const rotatedOffset = this.rotateOffset(offsetX, offsetY, tetromino.rotation);
 
+        // Hitung max text width untuk auto-size (perhitungkan scale, gunakan matrix ASLI)
+        const maxTextWidth = this.calculateMaxTextWidth(tetromino.shape.matrix, tetromino.shape.shape_name) * scale;
+
+        // Setup text config
+        const textConfig: Phaser.Types.GameObjects.Text.TextStyle = {
+          fontFamily: '"Nunito", sans-serif',
+          fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
+          color: '#FFFFFF',
+          align: 'center',
+          fontStyle: 'bold',
+        };
+
+        // Khusus shape O: gunakan word wrap jika text ada spasi
+        if (tetromino.shape.shape_name === 'o' && label.includes(' ')) {
+          textConfig.wordWrap = { width: maxTextWidth };
+        }
+
         const text = this.scene.add.text(
           Math.round(rotatedOffset.x * scale * GAME_CONSTANTS.SCALE_FACTOR),
           Math.round(rotatedOffset.y * scale * GAME_CONSTANTS.SCALE_FACTOR),
           label,
-          {
-            fontFamily: '"Nunito", sans-serif',
-            fontSize: `${Math.floor(GAME_CONSTANTS.TETROMINO_FONT_SIZE * scale)}px`,
-            color: '#FFFFFF',
-            align: 'center',
-            fontStyle: 'bold',
-          }
+          textConfig
         );
         text.setOrigin(0.5);
         text.setAngle(textRotation); // Show the actual text rotation
         text.setResolution(2);
+
+        // Auto-scale untuk semua shape jika text terlalu lebar
+        // (Kecuali shape O dengan word wrap, karena sudah di-handle oleh wordWrap)
+        if (!(tetromino.shape.shape_name === 'o' && label.includes(' '))) {
+          if (text.width > maxTextWidth) {
+            const scaleDown = maxTextWidth / text.width;
+            text.setScale(scaleDown);
+          }
+        }
+
         container.add(text);
       }
     }
