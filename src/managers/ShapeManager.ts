@@ -177,14 +177,29 @@ export class ShapeManager {
   }
 
   /**
-   * Cari label yang terdiri dari 2 kata dari array (seperti "Data Analytics")
+   * Cari label yang terdiri dari multi-kata dan bagi menjadi 2 bagian seimbang
+   * Untuk shape S dan Z yang punya 2 text position
+   *
+   * Contoh:
+   * - 2 kata "data analytics" → ["data", "analytics"]
+   * - 3 kata "join the dots" → ["join", "the dots"]
+   * - 4 kata "join the dots oke" → ["join the", "dots oke"]
+   * - 5 kata "join the dots today please" → ["join the dots", "today please"]
    */
   private getTwoWordLabelFromArray(labels: string[]): string[] | null {
-    const twoWordLabels = labels.filter(label => label.includes(' '));
-    if (twoWordLabels.length > 0) {
-      const selected = twoWordLabels[Math.floor(Math.random() * twoWordLabels.length)];
+    const multiWordLabels = labels.filter(label => label.includes(' '));
+    if (multiWordLabels.length > 0) {
+      const selected = multiWordLabels[Math.floor(Math.random() * multiWordLabels.length)];
       const words = selected.split(' ');
-      return words;
+
+      // Hitung titik tengah untuk pembagian seimbang
+      const midPoint = Math.ceil(words.length / 2);
+
+      // Bagi menjadi 2 label
+      const label1 = words.slice(0, midPoint).join(' ');
+      const label2 = words.slice(midPoint).join(' ');
+
+      return [label1, label2];
     }
     return null;
   }

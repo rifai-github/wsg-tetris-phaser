@@ -155,11 +155,23 @@ Customize gameplay via query parameters:
 - `?type=<mode>`: Select gameplay mode (explorer, builder, adapter, innovator)
 - `?timer=<seconds>`: Set custom countdown duration (default: 10)
 - `?username=<name>`: Display custom username in profile section
+- `?suggested_skills=<JSON_array>`: Set custom skills labels from URL (URL-encoded JSON array)
 
-Example: `game.html?type=adapter&timer=15&username=John`
+Example: `game.html?type=adapter&timer=15&username=John&suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%2C%22Creative%22%5D`
+
+**Note**: The `suggested_skills` parameter uses URL-encoded JSON array format. The skills will be displayed sequentially and cycle through all provided skills. If not provided, the game will fallback to default labels from `shape_data.json`.
 
 ### Labels Database
-Add new skills labels in `public/label_block.json`:
+
+**Option 1: Using URL Parameter (Recommended)**
+Pass custom skills via URL parameter for dynamic label assignment:
+```html
+game.html?suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%2C%22Creative%22%5D
+```
+Decodes to: `["Agile", "Adaptable", "Creative"]`
+
+**Option 2: Using Default JSON File**
+Add new skills labels in `public/label_block.json` (fallback when no URL parameter provided):
 ```json
 [
   "Future Ready",
@@ -168,6 +180,11 @@ Add new skills labels in `public/label_block.json`:
   "Your New Label Here"
 ]
 ```
+
+**Label Assignment Behavior:**
+- **Suggested Skills (URL)**: Labels assigned sequentially and cycle through all skills
+- **Default Labels (JSON)**: Labels assigned randomly from the pool
+- **Shape S/Z**: Multi-word labels split evenly across 2 text positions using balanced splitting
 
 ### UI Components
 The game features several specialized UI elements:
@@ -208,11 +225,13 @@ The game uses a modular manager architecture:
 
 ### Data Flow
 1. Load gameplay configuration based on URL parameter
-2. Initialize managers with shape and label data from centralized constants
-3. Generate tetrominos with skill labels
-4. Render with optional prediction overlays
-5. Update timer and slider in real-time
-6. Handle user input and game state updates
+2. Parse `suggested_skills` from URL parameter (if provided) or use default labels from `shape_data.json`
+3. Initialize managers with shape and label data from centralized constants
+4. Generate tetrominos with skill labels (sequential cycling for suggested_skills, random for default labels)
+5. Render with auto-sized text labels based on shape matrix dimensions
+6. Render with optional prediction overlays
+7. Update timer and slider in real-time
+8. Handle user input and game state updates
 
 ### Prediction Algorithm
 The explorer mode uses a sophisticated six-factor scoring system:
@@ -259,6 +278,23 @@ The explorer mode uses a sophisticated six-factor scoring system:
   - Generates random shape with random rotation
   - Labels adjust based on target shape's text position count
   - Can switch from any shape to any shape (including S and Z)
+- **Auto-Size Text Labels**:
+  - Text automatically scales to fit within tile boundaries (85% of tile width for padding)
+  - Max text width calculated based on original shape matrix (before rotation)
+  - Shape-specific limits:
+    - Shape I (4 tiles): 149.6px max width
+    - Shape J/L/T (3 tiles): 112.2px max width
+    - Shape O/S/Z (2 tiles): 74.8px max width
+  - **Shape O Special Handling**: Uses word wrap for multi-word labels, falls back to scaling if no spaces
+  - Applied to: active tetrominos, next tetrominos (preview), and locked tetrominos
+- **Balanced Word Splitting for S/Z Shapes**:
+  - Multi-word labels are split evenly across 2 text positions
+  - Split point calculated using `Math.ceil(wordCount / 2)` for balanced distribution
+  - Examples:
+    - "data analytics" → ["data", "analytics"] (1+1)
+    - "join the dots" → ["join", "the dots"] (1+2)
+    - "join the dots today" → ["join the", "dots today"] (2+2)
+    - "join the dots today please" → ["join the dots", "today please"] (3+2)
 
 ## Browser Support
 
