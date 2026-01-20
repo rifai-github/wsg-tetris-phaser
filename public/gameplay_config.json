@@ -23,8 +23,8 @@
             "switch"
         ],
         "play_area": "/images/play_area/adapter.png",
-        "instruction_text": "Transform shape to fit in block!",
-        "instruction_text_color": "#FF9C46"
+        "instruction_text": "Change the shape to fit the block!",
+        "instruction_text_color": "#4665FF"
     },
     {
         "type": "innovator",

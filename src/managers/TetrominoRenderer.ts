@@ -61,6 +61,12 @@ export class TetrominoRenderer {
     const image = this.scene.add.image(center.x, center.y, shapeKey);
     image.setDisplaySize(originalWidth, originalHeight);
     image.setAngle(tetromino.rotation);
+
+    // Enable smooth texture filtering untuk menghindari pixelation
+    if (image.texture) {
+      image.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+
     this.container.add(image);
 
     // Render text labels sesuai text_position

@@ -50,7 +50,7 @@ const config = {
         antialias: true,
         antialiasGL: true,
         pixelArt: false,
-        roundPixels: true,
+        roundPixels: false, // Disable untuk smooth rendering (tidak pixelated)
         powerPreference: 'high-performance',
         desynchronized: false
     },

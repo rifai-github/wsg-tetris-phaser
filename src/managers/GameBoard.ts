@@ -94,6 +94,12 @@ export class GameBoard {
     const image = this.scene.add.image(center.x, center.y, outlineKey);
     image.setDisplaySize(originalWidth, originalHeight);
     image.setAngle(tetromino.rotation);
+
+    // Enable smooth texture filtering untuk menghindari pixelation
+    if (image.texture) {
+      image.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+
     this.lockedTiles.add(image);
 
     // Store original scale before animation
@@ -107,6 +113,10 @@ export class GameBoard {
       ease: 'Back.easeOut',
       onComplete: () => {
         image.setTexture(colorKey);
+        // Ensure smooth texture filtering setelah texture change
+        if (image.texture) {
+          image.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
         this.scene.tweens.add({
           targets: image,
           scale: { from: itemScale + 0.025, to: itemScale },
