@@ -128,39 +128,58 @@ export class UIManager {
 
     const userName = username || 'John Doe';
 
-    // Split username menjadi 2 baris seimbang
-    const words = userName.split(' ');
-    const midPoint = Math.ceil(words.length / 2);
-    const line1 = words.slice(0, midPoint).join(' ');
-    const line2 = words.slice(midPoint).join(' ');
-    const displayName = `${line1}\n${line2}`;
-
     // Hitung max width untuk username agar tidak overlap dengan timer
     const timerX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
     const nameTextX = leftMargin + profileSize + GAME_CONSTANTS.PROFILE_NAME_SPACING;
-    const maxNameWidth = timerX - nameTextX - (130 * GAME_CONSTANTS.SCALE_FACTOR); // 80px padding untuk timer bg
+    const maxNameWidth = timerX - nameTextX - (130 * GAME_CONSTANTS.SCALE_FACTOR); // 130px padding untuk timer bg
 
-    // Username to the right of profile (tanpa word wrap)
-    const nameText = this.scene.add.text(
+    // Coba 1 baris dulu
+    let nameText = this.scene.add.text(
       nameTextX,
       y,
-      displayName,
+      userName,
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
         fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#FFFFFF',
         fontStyle: 'bold',
-        lineSpacing: -5,
         align: 'left'
       }
     );
-    nameText.setOrigin(0, 0.5); // Pivot from left center
+    nameText.setOrigin(0, 0.5);
     nameText.setResolution(2);
 
-    // Auto-size (scale down) jika text terlalu lebar seperti Unity
+    // Jika 1 baris melebihi max width, coba 2 baris (balanced split)
     if (nameText.width > maxNameWidth) {
-      const scale = maxNameWidth / nameText.width;
-      nameText.setScale(scale);
+      nameText.destroy();
+
+      const words = userName.split(' ');
+      const midPoint = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, midPoint).join(' ');
+      const line2 = words.slice(midPoint).join(' ');
+      const displayName = `${line1}\n${line2}`;
+
+      nameText = this.scene.add.text(
+        nameTextX,
+        y,
+        displayName,
+        {
+          fontFamily: GAME_CONSTANTS.FONT_FAMILY,
+          fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+          color: '#FFFFFF',
+          fontStyle: 'bold',
+          lineSpacing: -5,
+          align: 'left'
+        }
+      );
+      nameText.setOrigin(0, 0.5);
+      nameText.setResolution(2);
+
+      // Auto-size (scale down) jika 2 baris masih terlalu lebar
+      if (nameText.width > maxNameWidth) {
+        const scale = maxNameWidth / nameText.width;
+        nameText.setScale(scale);
+      }
     }
 
     // Create timer on the right side (where slider was)
