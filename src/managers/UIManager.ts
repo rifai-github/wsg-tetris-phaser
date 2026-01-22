@@ -128,11 +128,23 @@ export class UIManager {
 
     const userName = username || 'John Doe';
 
-    // Username to the right of profile
+    // Split username menjadi 2 baris seimbang
+    const words = userName.split(' ');
+    const midPoint = Math.ceil(words.length / 2);
+    const line1 = words.slice(0, midPoint).join(' ');
+    const line2 = words.slice(midPoint).join(' ');
+    const displayName = `${line1}\n${line2}`;
+
+    // Hitung max width untuk username agar tidak overlap dengan timer
+    const timerX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
+    const nameTextX = leftMargin + profileSize + GAME_CONSTANTS.PROFILE_NAME_SPACING;
+    const maxNameWidth = timerX - nameTextX - (130 * GAME_CONSTANTS.SCALE_FACTOR); // 80px padding untuk timer bg
+
+    // Username to the right of profile (tanpa word wrap)
     const nameText = this.scene.add.text(
-      leftMargin + profileSize + GAME_CONSTANTS.PROFILE_NAME_SPACING,
+      nameTextX,
       y,
-      userName.split(' ').join('\n'),
+      displayName,
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
         fontSize: Math.floor(21 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
@@ -144,6 +156,12 @@ export class UIManager {
     );
     nameText.setOrigin(0, 0.5); // Pivot from left center
     nameText.setResolution(2);
+
+    // Auto-size (scale down) jika text terlalu lebar seperti Unity
+    if (nameText.width > maxNameWidth) {
+      const scale = maxNameWidth / nameText.width;
+      nameText.setScale(scale);
+    }
 
     // Create timer on the right side (where slider was)
     this.createTimer(y);
