@@ -288,11 +288,17 @@ export class TetrisScene extends Phaser.Scene {
    * Pause the game
    */
   private pauseGame(): void {
-    if (!this.isGameActive || this.isPaused || this.isCountdownActive) {
+    // Allow pause during countdown or active game, but not if already paused
+    if (this.isPaused || (!this.isGameActive && !this.isCountdownActive)) {
       return;
     }
 
     this.isPaused = true;
+
+    // Pause Lottie animation if countdown is active
+    if (this.isCountdownActive && this.lottieAnimation) {
+      this.lottieAnimation.pause();
+    }
 
     // Pause audio
     if (this.sound.get('bgm')) {
@@ -312,11 +318,17 @@ export class TetrisScene extends Phaser.Scene {
    * Resume the game
    */
   private resumeGame(): void {
-    if (!this.isGameActive || !this.isPaused) {
+    // Allow resume if paused (during countdown or active game)
+    if (!this.isPaused) {
       return;
     }
 
     this.isPaused = false;
+
+    // Resume Lottie animation if countdown is active
+    if (this.isCountdownActive && this.lottieAnimation) {
+      this.lottieAnimation.play();
+    }
 
     // Resume audio
     if (this.sound.get('bgm')) {
@@ -681,13 +693,16 @@ export class TetrisScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     // Handle countdown before game starts
     if (this.isCountdownActive) {
-      this.countdownTimer -= delta;
-      const previousSecond = Math.ceil((this.countdownTimer + delta) / 1000);
-      const currentSecond = Math.ceil(this.countdownTimer / 1000);
+      // Don't update countdown timer if paused
+      if (!this.isPaused) {
+        this.countdownTimer -= delta;
+        const previousSecond = Math.ceil((this.countdownTimer + delta) / 1000);
+        const currentSecond = Math.ceil(this.countdownTimer / 1000);
 
-      // Trigger animation when second changes
-      if (previousSecond !== currentSecond && currentSecond >= 0) {
-        this.animateCountdown();
+        // Trigger animation when second changes
+        if (previousSecond !== currentSecond && currentSecond >= 0) {
+          this.animateCountdown();
+        }
       }
 
       return; // Don't process game logic during countdown
