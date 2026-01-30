@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation (393x852px) with an 8x9 grid system (44px tiles), featuring touch controls, countdown timer with slider, and skill-themed gameplay with multiple gameplay modes.
+WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills labels on tetromino blocks. Built in portrait orientation with responsive scaling (393x852px design reference), 8x9 grid system, touch controls, countdown timer with slider, and skill-themed gameplay with multiple gameplay modes.
 
 **Note**: This project uses a custom parent frame integration pattern. The `parent-example.html` file in the root directory serves as a reference for iframe embedding and parent-window messaging.
 
@@ -14,11 +14,25 @@ The game supports iframe embedding with parent-window messaging via PostMessage 
 
 **Game → Parent Messages:**
 - `PHASER_IMAGE`: Sent on game over, contains base64 screenshot data and timestamp
-- Message format: `{ type: 'PHASER_IMAGE', screenshot: string, timestamp: number }`
+  - Format: `{ type: 'PHASER_IMAGE', screenshot: string, timestamp: number }`
+- `GAME_PAUSED`: Sent when game is paused
+  - Format: `{ type: 'GAME_PAUSED', timestamp: number }`
+- `GAME_RESUMED`: Sent when game is resumed
+  - Format: `{ type: 'GAME_RESUMED', timestamp: number }`
+- `GAME_MUTED`: Sent when game audio is muted
+  - Format: `{ type: 'GAME_MUTED', isMuted: true, timestamp: number }`
+- `GAME_UNMUTED`: Sent when game audio is unmuted
+  - Format: `{ type: 'GAME_UNMUTED', isMuted: false, timestamp: number }`
+- `INFO_CLICKED`: Sent when info button is clicked (also pauses the game)
+  - Format: `{ type: 'INFO_CLICKED', timestamp: number }`
 
 **Parent → Game Messages:**
 - `restart`: Triggers game restart from parent application
-- Message format: `{ type: 'restart' }`
+  - Format: `{ type: 'restart' }`
+- `pause`: Pauses the game (stops timer, audio, and game logic)
+  - Format: `{ type: 'pause' }`
+- `resume`: Resumes a paused game
+  - Format: `{ type: 'resume' }`
 
 Reference implementation in `parent-example.html` demonstrates screenshot capture and restart functionality.
 
@@ -55,10 +69,11 @@ Each mode is configured via [`gameplay_config.json`](public/gameplay_config.json
 
 Customize gameplay via query parameters:
 - `?type=<mode>`: Select gameplay mode (explorer, builder, adapter, innovator)
-- `?timer=<seconds>`: Set custom countdown duration (default: 10)
+- `?timer=<seconds>`: Set custom countdown duration (default: 60)
 - `?username=<name>`: Display custom username in profile section
+- `?suggested_skills=<JSON_array>`: Custom skills labels (URL-encoded JSON array). Labels assigned sequentially and cycle through all skills. Falls back to `label_block.json` if not provided.
 
-Example: `game.html?type=adapter&timer=15&username=John`
+Example: `game.html?type=adapter&timer=15&username=John&suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%5D`
 
 ## Architecture
 
@@ -80,7 +95,7 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - Uses prediction-specific textures: `/images/shapes/prediction/*.png`
 
 **GameBoard** ([GameBoard.ts](src/managers/GameBoard.ts))
-- Manages 8x9 grid system with 44px tiles
+- Manages 8x9 grid system with dynamically scaled tiles
 - Collision detection and boundary checking
 - Locks tetrominos permanently to the board with rotated text labels
 - Line clearing (disabled by default but implemented)
@@ -106,11 +121,11 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 
 ### Key Game Mechanics
 
-**Grid System**: 8 columns × 9 rows, 44px tiles, positioned at (20, 319)
+**Grid System**: 8 columns × 9 rows, dynamically sized tiles, position calculated for centering
 
-**Screen Resolution**: 393x852px portrait mode with 353x397px play area
+**Screen Resolution**: Responsive canvas with 393x852px design reference and 353x397px play area (both scaled by SCALE_FACTOR)
 
-**Timer System**: 10-second countdown with color warnings (white → orange → red)
+**Timer System**: Countdown with color warnings (>30s: white, 10-30s: orange, <10s: red)
 
 **Progress Slider**: Real-time slider showing timer progress in quarters format ("Progress X/4")
 
@@ -153,12 +168,13 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - `instruction_text_color`: RGB hex color for instruction text
 
 ### Key Constants
-- `TILE_SIZE`: 44px
+- `DESIGN_WIDTH/HEIGHT`: 393x852px (reference resolution for game logic)
+- `TILE_SIZE`: `43 * SCALE_FACTOR` (dynamically calculated for responsive scaling)
 - `GRID_WIDTH`: 8, `GRID_HEIGHT`: 9
-- `CANVAS_WIDTH`: 393px, `CANVAS_HEIGHT`: 852px
-- `PLAY_AREA_WIDTH`: 353px, `PLAY_AREA_HEIGHT`: 397px
-- `BOARD_X`: 20px, `BOARD_Y`: 319px
-- `COUNTDOWN_DURATION`: 10 seconds
+- `CANVAS_WIDTH/HEIGHT`: Responsive based on window size (`window.innerWidth * 2`, `window.innerHeight * 2`)
+- `PLAY_AREA_WIDTH/HEIGHT`: 353x397px (scaled by SCALE_FACTOR)
+- `BOARD_X/Y`: Dynamically calculated for centering
+- `COUNTDOWN_DURATION`: 60 seconds (configurable via URL `?timer=<seconds>`)
 - `DROP_INTERVAL`: 1000ms
 - `FONT_FAMILY`: 'Nunito' (loaded from Google Fonts)
 
@@ -187,6 +203,17 @@ All asset paths centralized in [`constants.ts`](src/config/constants.ts):
 
 **Text Positioning**: Defined per-shape in shape_data.json as `[x, y]` offsets from shape center. S and Z shapes have two positions for two-word labels.
 
+**Auto-Size Text Labels**: Text automatically scales to fit within tile boundaries (85% of tile width):
+- Shape I (4 tiles): 149.6px max width
+- Shape J/L/T (3 tiles): 112.2px max width
+- Shape O/S/Z (2 tiles): 74.8px max width
+- Shape O uses word wrap for multi-word labels, falls back to scaling if no spaces
+
+**Balanced Word Splitting for S/Z Shapes**: Multi-word labels split evenly using `Math.ceil(wordCount / 2)`:
+- "data analytics" → ["data", "analytics"]
+- "join the dots" → ["join", "the dots"]
+- "join the dots today" → ["join the", "dots today"]
+
 **Locking Mechanism**: When tetromino locks, GameBoard calculates true center from filled tiles, renders complete shape image at rotation, and applies rotated text labels.
 
 **Prediction Algorithm**: Six-factor scoring system considers:
@@ -201,17 +228,17 @@ All asset paths centralized in [`constants.ts`](src/config/constants.ts):
 
 **Shape Preview Positioning**: 7 tetrominos previewed horizontally to the left of the play area. Right edge of first shape aligns with play area right edge. First shape uses color rendering, others use outline.
 
-**Timer System**: 10-second countdown with visual warnings:
-- 10-30 seconds: White text
-- 1-10 seconds: Orange warning
-- 0 seconds: Red urgent
+**Timer System**: Countdown with visual warnings:
+- Above 30 seconds: White text
+- 10-30 seconds: Orange warning
+- Below 10 seconds: Red urgent
 - Auto game over when timer reaches 0
 
 **Game Over Conditions**:
 1. Timer reaches 0 seconds
 2. No valid spawn position available in top row
 
-**Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:47 to see grid lines, bounding boxes, and shape info.
+**Debug Mode**: Set `debugMode: boolean = true` in TetrisScene.ts:65 to see grid lines, bounding boxes, and shape info.
 
 **Text Rendering**: All text elements use 2x resolution (`setResolution(2)`) with enhanced shadow effects (1px offset, 2px blur) for sharp, clear display with optimal readability against game backgrounds.
 
@@ -238,6 +265,6 @@ Vite config uses:
 ## Dependencies
 
 - **phaser**: ^3.90.0 - Game framework and rendering engine
-- **lottie-web**: ^5.13.0 - Animation library (available but may not be actively used)
+- **lottie-web**: ^5.13.0 - Animation library for pre-game countdown animation
 - **typescript**: ^5.9.3 - Type-safe development
 - **vite**: ^7.2.4 - Fast build tool and dev server

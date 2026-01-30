@@ -4,7 +4,7 @@
 
 // Design Resolution - ukuran referensi untuk game logic
 const DESIGN_WIDTH = 393;
-const DESIGN_HEIGHT = 852;
+const DESIGN_HEIGHT = 852; //887
 
 // Calculate scale factor untuk memastikan game SELALU muat dalam viewport
 // Prioritaskan width mengikuti screen, height menyesuaikan
@@ -43,12 +43,12 @@ export const GAME_CONSTANTS = {
   PLAY_AREA_HEIGHT: Math.floor(397 * SCALE_FACTOR),
 
   // Spacing - scaled agar proporsional
-  PLAY_AREA_TOP_MARGIN: Math.floor(220 * SCALE_FACTOR),
+  PLAY_AREA_TOP_MARGIN: Math.floor(250 * SCALE_FACTOR),
   BUTTON_DISTANCE_FROM_PLAY_AREA: Math.floor(10 * SCALE_FACTOR),
-  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(15 * SCALE_FACTOR),
+  TETROMINO_DISTANCE_FROM_PLAY_AREA: Math.floor(20 * SCALE_FACTOR),
 
   // Drop speed
-  DROP_INTERVAL: 1000, // 1 second
+  DROP_INTERVAL: 1500, // 1.5 second
 
   // Timer
   COUNTDOWN_DURATION: 60, // 3 minutes in seconds
@@ -104,6 +104,7 @@ export const ASSET_PATHS = {
   PROFILE: '/images/profile-placeholder.png',
   DEFAULT_PLAY_AREA: '/images/panel-play-area-purple.png',
   TIMER_BG: '/images/timer-bg.png',
+  HEADER_BG: '/images/bg-header.png',
 
   // Control Buttons
   BUTTONS: {
@@ -113,6 +114,8 @@ export const ASSET_PATHS = {
     RIGHT: '/images/button/right.png',
     DOWN: '/images/button/down.png',
     ROTATE: '/images/button/rotate.png',
+    MUTE: '/images/mute.png',
+    INFO: '/images/info.png',
   },
 
   // Shape Images - Color Versions

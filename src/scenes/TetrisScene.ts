@@ -45,6 +45,7 @@ export class TetrisScene extends Phaser.Scene {
   private dropTimer: number = 0;
   private dropInterval: number = GAME_CONSTANTS.DROP_INTERVAL;
   private isGameActive: boolean = false;
+  private isPaused: boolean = false;
   private gameTimer: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
   private constGameTime: number = GAME_CONSTANTS.COUNTDOWN_DURATION;
 
@@ -85,6 +86,9 @@ export class TetrisScene extends Phaser.Scene {
     // Load timer background
     this.load.image('timer_bg', ASSET_PATHS.TIMER_BG);
 
+    // Load header background
+    this.load.image('header_bg', ASSET_PATHS.HEADER_BG);
+
     // Load control buttons
     this.load.image('button_skip', ASSET_PATHS.BUTTONS.SKIP);
     this.load.image('button_switch', ASSET_PATHS.BUTTONS.SWITCH);
@@ -92,6 +96,8 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('button_right', ASSET_PATHS.BUTTONS.RIGHT);
     this.load.image('button_down', ASSET_PATHS.BUTTONS.DOWN);
     this.load.image('button_rotate', ASSET_PATHS.BUTTONS.ROTATE);
+    this.load.image('button_mute', ASSET_PATHS.BUTTONS.MUTE);
+    this.load.image('button_info', ASSET_PATHS.BUTTONS.INFO);
 
     // Load shape data JSON
     this.load.json('shapeData', ASSET_PATHS.DATA.SHAPES);
@@ -231,6 +237,16 @@ export class TetrisScene extends Phaser.Scene {
         onDownRelease: () => this.stopSoftDrop()
       });
 
+      // Setup mute button callback
+      this.uiManager.setupMuteCallback((isMuted: boolean) => {
+        this.handleMuteToggle(isMuted);
+      });
+
+      // Setup info button callback - pauses game and notifies parent
+      this.uiManager.setupInfoCallback(() => {
+        this.handleInfoClick();
+      });
+
       // Setup debug mode
       if (this.debugMode) {
         this.setupDebug();
@@ -258,10 +274,96 @@ export class TetrisScene extends Phaser.Scene {
       if (event.data.type === 'restart') {
         console.log('Restart command received from parent');
         this.startGame();
+      } else if (event.data.type === 'pause') {
+        console.log('Pause command received from parent');
+        this.pauseGame();
+      } else if (event.data.type === 'resume') {
+        console.log('Resume command received from parent');
+        this.resumeGame();
       }
     });
   }
 
+  /**
+   * Pause the game
+   */
+  private pauseGame(): void {
+    if (!this.isGameActive || this.isPaused || this.isCountdownActive) {
+      return;
+    }
+
+    this.isPaused = true;
+
+    // Pause audio
+    if (this.sound.get('bgm')) {
+      this.sound.get('bgm').pause();
+    }
+
+    // Notify parent that game is paused
+    window.parent.postMessage({
+      type: 'GAME_PAUSED',
+      timestamp: Date.now()
+    }, '*');
+
+    console.log('Game paused');
+  }
+
+  /**
+   * Resume the game
+   */
+  private resumeGame(): void {
+    if (!this.isGameActive || !this.isPaused) {
+      return;
+    }
+
+    this.isPaused = false;
+
+    // Resume audio
+    if (this.sound.get('bgm')) {
+      this.sound.get('bgm').resume();
+    }
+
+    // Notify parent that game is resumed
+    window.parent.postMessage({
+      type: 'GAME_RESUMED',
+      timestamp: Date.now()
+    }, '*');
+
+    console.log('Game resumed');
+  }
+
+  /**
+   * Handle mute toggle - mutes/unmutes game audio and notifies parent
+   */
+  private handleMuteToggle(isMuted: boolean): void {
+    // Mute/unmute all Phaser sounds
+    this.sound.mute = isMuted;
+
+    // Notify parent about mute state change
+    window.parent.postMessage({
+      type: isMuted ? 'GAME_MUTED' : 'GAME_UNMUTED',
+      isMuted: isMuted,
+      timestamp: Date.now()
+    }, '*');
+
+    console.log('Game audio:', isMuted ? 'MUTED' : 'UNMUTED');
+  }
+
+  /**
+   * Handle info button click - pauses game and notifies parent
+   */
+  private handleInfoClick(): void {
+    // Pause the game
+    this.pauseGame();
+
+    // Notify parent that info button was clicked
+    window.parent.postMessage({
+      type: 'INFO_CLICKED',
+      timestamp: Date.now()
+    }, '*');
+
+    console.log('Info button clicked - game paused');
+  }
 
   /**
    * Setup debug graphics dan text
@@ -305,6 +407,7 @@ export class TetrisScene extends Phaser.Scene {
     }
 
     this.gameBoard.reset();
+    this.shapeManager.reset(); // Reset shape manager state
     this.isGameActive = false; // Don't start game immediately
     this.dropTimer = 0;
     this.gameTimer = this.constGameTime; // Reset countdown timer
@@ -583,6 +686,11 @@ export class TetrisScene extends Phaser.Scene {
       }
 
       return; // Don't process game logic during countdown
+    }
+
+    // Don't process game logic when paused
+    if (this.isPaused) {
+      return;
     }
 
     if (!this.currentTetromino) {

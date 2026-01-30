@@ -17,6 +17,9 @@ export class UIManager {
     rotate?: Phaser.GameObjects.Image;
   } = {};
   private timerText?: Phaser.GameObjects.Text;
+  private muteButton?: Phaser.GameObjects.Image;
+  private infoButton?: Phaser.GameObjects.Image;
+  private isMuted: boolean = false;
   private slider: {
     background?: Phaser.GameObjects.Image;
     progress?: Phaser.GameObjects.Image;
@@ -83,12 +86,13 @@ export class UIManager {
     const centerX = GAME_CONSTANTS.CANVAS_WIDTH / 2;
     const spacing = GAME_CONSTANTS.HEADER_SPACING;
 
-    // 1. Instruction at the top
+    // 1. Instruction at the top (returns bottom Y position)
     const instructionY = GAME_CONSTANTS.START_Y;
-    this.createInstructionSection(centerX, instructionY + spacing, gameplayConfig);
+    const instructionBottomY = this.createInstructionSection(centerX, instructionY + spacing, gameplayConfig);
 
-    // 2. Profile at the bottom with timer (pivot from left)
-    const profileY = (instructionY + 60 + (spacing * 6));
+    // 2. Profile with timer below instruction section
+    const profileSpacing = 50 * GAME_CONSTANTS.SCALE_FACTOR;
+    const profileY = instructionBottomY + profileSpacing;
     this.createProfileSection(profileY, gameplayConfig, username);
   }
 
@@ -131,7 +135,7 @@ export class UIManager {
     // Hitung max width untuk username agar tidak overlap dengan timer
     const timerX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
     const nameTextX = leftMargin + profileSize + GAME_CONSTANTS.PROFILE_NAME_SPACING;
-    const maxNameWidth = timerX - nameTextX - (130 * GAME_CONSTANTS.SCALE_FACTOR); // 130px padding untuk timer bg
+    const maxNameWidth = timerX - nameTextX - (175 * GAME_CONSTANTS.SCALE_FACTOR); // 175px padding untuk timer bg dan mute
 
     // Coba 1 baris dulu
     let nameText = this.scene.add.text(
@@ -187,12 +191,16 @@ export class UIManager {
   }
 
   /**
-   * Create timer (aligned to right side of profile section)
+   * Create timer (aligned to right side of profile section) and mute button
    */
   private createTimer(profileY: number): void {
-    // Position timer at right edge, aligned with profile
-    const timerX = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
+    const rightEdge = (GAME_CONSTANTS.CANVAS_WIDTH / 2) + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2);
     const timerY = profileY;
+    const muteButtonSize = 40 * GAME_CONSTANTS.SCALE_FACTOR;
+    const muteButtonSpacing = 5 * GAME_CONSTANTS.SCALE_FACTOR;
+
+    // Position timer shifted left to make room for mute button
+    const timerX = rightEdge - muteButtonSize - muteButtonSpacing;
 
     // Create timer background
     const timerBg = this.scene.add.image(timerX, timerY, 'timer_bg');
@@ -214,27 +222,37 @@ export class UIManager {
     );
     this.timerText.setOrigin(1, 0.5); // Right center origin
     this.timerText.setResolution(2);
+
+    // Create mute button at right edge
+    this.muteButton = this.scene.add.image(rightEdge, timerY, 'button_mute');
+    this.muteButton.setOrigin(1, 0.5); // Right center origin
+    this.muteButton.setDisplaySize(muteButtonSize, muteButtonSize);
+    this.muteButton.setInteractive({ useHandCursor: true });
   }
 
 
   /**
    * Create instruction text section below header
+   * Returns the bottom Y position of this section for layout calculations
    */
-  private createInstructionSection(x: number, y: number, gameplayConfig?: GameplayConfig | null): void {
+  private createInstructionSection(x: number, y: number, gameplayConfig?: GameplayConfig | null): number {
     const centerX = x;
     const instructionY = y;
+    const paddingY = 5 * GAME_CONSTANTS.SCALE_FACTOR; // Vertical padding
 
+    // Create text first to measure dimensions
     // Text bagian putih
     const instructionText1 = this.scene.add.text(
-      centerX,
-      instructionY,
-      'Arrange your skills and traits to find your fit',
+      centerX - 40,
+      instructionY + paddingY,
+      'Organize the blocks and fill the gaps to enhance your skills.',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
-        color: '#FFFFFF',
+        fontSize: Math.floor(12 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        color: '#353535',
         fontStyle: '600',
         align: 'center',
+        wordWrap: { width: GAME_CONSTANTS.PLAY_AREA_WIDTH - 240 } // 40px padding kiri-kanan
       }
     );
     instructionText1.setOrigin(0.5, 0);
@@ -242,12 +260,13 @@ export class UIManager {
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
-      centerX,
-      (instructionY + instructionText1.height),
+      centerX - 40,
+      instructionY + paddingY + instructionText1.height,
       gameplayConfig?.instruction_text || '',
+      // 'Select your block perfectly to make great foundation!' || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(14 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(12 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
         align: 'center',
@@ -255,6 +274,37 @@ export class UIManager {
     );
     instructionText2.setOrigin(0.5, 0);
     instructionText2.setResolution(2);
+
+    // Calculate dimensions for background
+    const totalTextHeight = instructionText1.height + instructionText2.height;
+    const bgWidth = GAME_CONSTANTS.PLAY_AREA_WIDTH; // Same width as play area for alignment
+    const bgHeight = totalTextHeight + (paddingY * 2);
+
+    // Add header background image with play area width
+    const headerBg = this.scene.add.image(centerX, instructionY, 'header_bg');
+    headerBg.setOrigin(0.5, 0);
+    headerBg.setDisplaySize(bgWidth, bgHeight); // Width matches play area
+
+    // Move text to front (above background)
+    instructionText1.setDepth(1);
+    instructionText2.setDepth(1);
+
+    // Add info button to the right of instruction section
+    const infoButtonSize = 20 * GAME_CONSTANTS.SCALE_FACTOR;
+    const rightEdge = GAME_CONSTANTS.PLAY_AREA_WIDTH - (5 * GAME_CONSTANTS.SCALE_FACTOR);// - infoButtonSize;// + (bgWidth / 2);
+
+    this.infoButton = this.scene.add.image(
+      rightEdge + (infoButtonSize / 2),
+      instructionY + (bgHeight / 2),
+      'button_info'
+    );
+    this.infoButton.setOrigin(0.5, 0.5);
+    this.infoButton.setDisplaySize(infoButtonSize, infoButtonSize);
+    this.infoButton.setInteractive({ useHandCursor: true });
+    this.infoButton.setDepth(1);
+
+    // Return the bottom position of the instruction section
+    return instructionY + bgHeight;
   }
 
   /**
@@ -423,5 +473,57 @@ export class UIManager {
    */
   getButtons() {
     return this.buttons;
+  }
+
+  /**
+   * Setup mute button callback
+   */
+  setupMuteCallback(onMuteToggle: (isMuted: boolean) => void): void {
+    if (this.muteButton) {
+      this.muteButton.on('pointerdown', () => {
+        this.muteButton!.setTint(0xcccccc);
+        this.isMuted = !this.isMuted;
+
+        // Visual feedback: reduce alpha when muted
+        if (this.isMuted) {
+          this.muteButton!.setAlpha(0.5);
+        } else {
+          this.muteButton!.setAlpha(1);
+        }
+
+        onMuteToggle(this.isMuted);
+      });
+      this.muteButton.on('pointerup', () => {
+        this.muteButton!.clearTint();
+      });
+      this.muteButton.on('pointerout', () => {
+        this.muteButton!.clearTint();
+      });
+    }
+  }
+
+  /**
+   * Get mute state
+   */
+  getMuteState(): boolean {
+    return this.isMuted;
+  }
+
+  /**
+   * Setup info button callback
+   */
+  setupInfoCallback(onInfoClick: () => void): void {
+    if (this.infoButton) {
+      this.infoButton.on('pointerdown', () => {
+        this.infoButton!.setTint(0xcccccc);
+        onInfoClick();
+      });
+      this.infoButton.on('pointerup', () => {
+        this.infoButton!.clearTint();
+      });
+      this.infoButton.on('pointerout', () => {
+        this.infoButton!.clearTint();
+      });
+    }
   }
 }

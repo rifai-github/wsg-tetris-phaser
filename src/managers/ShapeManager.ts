@@ -10,6 +10,7 @@ export class ShapeManager {
   private currentGameplayType: string = '';
   private suggestedSkills: string[] = [];
   private currentSkillIndex: number = 0;
+  private lastGeneratedShapeName: string = ''; // Track last shape to prevent consecutive duplicates
 
   constructor() {}
 
@@ -26,6 +27,15 @@ export class ShapeManager {
   setSuggestedSkills(skills: string[]): void {
     this.suggestedSkills = skills;
     this.currentSkillIndex = 0;
+  }
+
+  /**
+   * Reset state untuk game baru
+   */
+  reset(): void {
+    this.lastGeneratedShapeName = '';
+    this.currentSkillIndex = 0;
+    this.usedLabels.clear();
   }
 
   /**
@@ -113,6 +123,7 @@ export class ShapeManager {
   /**
    * Get random shape dari shape data
    * Di adapter mode, filter shape S dan Z
+   * Mencegah bentuk yang sama berturut-turut
    */
   private getRandomShape(): ShapeData {
     // Filter shape berdasarkan gameplay type
@@ -125,8 +136,20 @@ export class ShapeManager {
       );
     }
 
+    // Exclude last generated shape to prevent consecutive duplicates
+    if (this.lastGeneratedShapeName && availableShapes.length > 1) {
+      availableShapes = availableShapes.filter(shape =>
+        shape.shape_name !== this.lastGeneratedShapeName
+      );
+    }
+
     const randomIndex = Math.floor(Math.random() * availableShapes.length);
-    return availableShapes[randomIndex];
+    const selectedShape = availableShapes[randomIndex];
+
+    // Update last generated shape name
+    this.lastGeneratedShapeName = selectedShape.shape_name;
+
+    return selectedShape;
   }
 
   /**
