@@ -9,8 +9,16 @@ export class ShapeManager {
   private usedLabels: Set<string> = new Set();
   private currentGameplayType: string = '';
   private suggestedSkills: string[] = [];
-  private currentSkillIndex: number = 0;
-  private lastGeneratedShapeName: string = ''; // Track last shape to prevent consecutive duplicates
+
+  // Track recent shapes to prevent duplicates within gap
+  // If shape L is spawned, it won't appear again for at least SHAPE_GAP tetrominos
+  private recentShapes: string[] = [];
+  private readonly SHAPE_GAP: number = 4; // Minimum gap before same shape can appear again
+
+  // Track recent labels to prevent duplicates within gap
+  // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetrominos
+  private recentLabels: string[] = [];
+  private readonly LABEL_GAP: number = 4; // Minimum gap before same label can appear again
 
   constructor() {}
 
@@ -26,15 +34,14 @@ export class ShapeManager {
    */
   setSuggestedSkills(skills: string[]): void {
     this.suggestedSkills = skills;
-    this.currentSkillIndex = 0;
   }
 
   /**
    * Reset state untuk game baru
    */
   reset(): void {
-    this.lastGeneratedShapeName = '';
-    this.currentSkillIndex = 0;
+    this.recentShapes = [];
+    this.recentLabels = [];
     this.usedLabels.clear();
   }
 
@@ -123,7 +130,7 @@ export class ShapeManager {
   /**
    * Get random shape dari shape data
    * Di adapter mode, filter shape S dan Z
-   * Mencegah bentuk yang sama berturut-turut
+   * Mencegah bentuk yang sama muncul dalam SHAPE_GAP tetromino terakhir
    */
   private getRandomShape(): ShapeData {
     // Filter shape berdasarkan gameplay type
@@ -136,18 +143,22 @@ export class ShapeManager {
       );
     }
 
-    // Exclude last generated shape to prevent consecutive duplicates
-    if (this.lastGeneratedShapeName && availableShapes.length > 1) {
+    // Exclude recent shapes to ensure minimum gap before same shape appears again
+    // Only exclude if there are enough shapes available
+    if (this.recentShapes.length > 0 && availableShapes.length > this.recentShapes.length) {
       availableShapes = availableShapes.filter(shape =>
-        shape.shape_name !== this.lastGeneratedShapeName
+        !this.recentShapes.includes(shape.shape_name)
       );
     }
 
     const randomIndex = Math.floor(Math.random() * availableShapes.length);
     const selectedShape = availableShapes[randomIndex];
 
-    // Update last generated shape name
-    this.lastGeneratedShapeName = selectedShape.shape_name;
+    // Add to recent shapes and maintain max size of SHAPE_GAP
+    this.recentShapes.push(selectedShape.shape_name);
+    if (this.recentShapes.length > this.SHAPE_GAP) {
+      this.recentShapes.shift(); // Remove oldest shape
+    }
 
     return selectedShape;
   }
@@ -202,6 +213,7 @@ export class ShapeManager {
   /**
    * Cari label yang terdiri dari multi-kata dan bagi menjadi 2 bagian seimbang
    * Untuk shape S dan Z yang punya 2 text position
+   * Juga track label di recentLabels untuk mencegah duplikat
    *
    * Contoh:
    * - 2 kata "data analytics" → ["data", "analytics"]
@@ -210,42 +222,72 @@ export class ShapeManager {
    * - 5 kata "join the dots today please" → ["join the dots", "today please"]
    */
   private getTwoWordLabelFromArray(labels: string[]): string[] | null {
-    const multiWordLabels = labels.filter(label => label.includes(' '));
-    if (multiWordLabels.length > 0) {
-      const selected = multiWordLabels[Math.floor(Math.random() * multiWordLabels.length)];
-      const words = selected.split(' ');
+    // Filter multi-word labels
+    let multiWordLabels = labels.filter(label => label.includes(' '));
 
-      // Hitung titik tengah untuk pembagian seimbang
-      const midPoint = Math.ceil(words.length / 2);
-
-      // Bagi menjadi 2 label
-      const label1 = words.slice(0, midPoint).join(' ');
-      const label2 = words.slice(midPoint).join(' ');
-
-      return [label1, label2];
+    if (multiWordLabels.length === 0) {
+      return null;
     }
-    return null;
+
+    // Filter out recent labels to ensure minimum gap
+    if (this.recentLabels.length > 0 && multiWordLabels.length > 1) {
+      const filtered = multiWordLabels.filter(label => !this.recentLabels.includes(label));
+      if (filtered.length > 0) {
+        multiWordLabels = filtered;
+      }
+    }
+
+    // Select random multi-word label
+    const selected = multiWordLabels[Math.floor(Math.random() * multiWordLabels.length)];
+    const words = selected.split(' ');
+
+    // Add to recent labels and maintain max size of LABEL_GAP
+    this.recentLabels.push(selected);
+    if (this.recentLabels.length > this.LABEL_GAP) {
+      this.recentLabels.shift(); // Remove oldest label
+    }
+
+    // Hitung titik tengah untuk pembagian seimbang
+    const midPoint = Math.ceil(words.length / 2);
+
+    // Bagi menjadi 2 label
+    const label1 = words.slice(0, midPoint).join(' ');
+    const label2 = words.slice(midPoint).join(' ');
+
+    return [label1, label2];
   }
 
   /**
-   * Get next label secara berurutan dari array (sequential cycling)
-   * Untuk suggested_skills dari URL parameter, ini akan memastikan semua skills digunakan
+   * Get next label yang tidak ada di recentLabels
+   * Mencegah label yang sama muncul dalam LABEL_GAP tetromino terakhir
    */
   private getNextLabelFromArray(labels: string[]): string {
     if (labels.length === 0) {
       return 'Label';
     }
 
-    // Gunakan suggestedSkills, ambil secara berurutan dan cycle
-    if (this.suggestedSkills.length > 0 && labels === this.suggestedSkills) {
-      const label = this.suggestedSkills[this.currentSkillIndex];
-      this.currentSkillIndex = (this.currentSkillIndex + 1) % this.suggestedSkills.length;
-      return label;
+    // Filter out recent labels to ensure minimum gap
+    let availableLabels = labels;
+    if (this.recentLabels.length > 0 && labels.length > this.recentLabels.length) {
+      availableLabels = labels.filter(label => !this.recentLabels.includes(label));
     }
 
-    // Fallback untuk shape.label dari JSON: ambil random
-    const randomLabel = labels[Math.floor(Math.random() * labels.length)];
-    return randomLabel;
+    // If all labels are recent, use all labels (fallback)
+    if (availableLabels.length === 0) {
+      availableLabels = labels;
+    }
+
+    // Select random label from available
+    const randomIndex = Math.floor(Math.random() * availableLabels.length);
+    const selectedLabel = availableLabels[randomIndex];
+
+    // Add to recent labels and maintain max size of LABEL_GAP
+    this.recentLabels.push(selectedLabel);
+    if (this.recentLabels.length > this.LABEL_GAP) {
+      this.recentLabels.shift(); // Remove oldest label
+    }
+
+    return selectedLabel;
   }
 
   /**
