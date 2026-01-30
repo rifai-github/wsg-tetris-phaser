@@ -10,10 +10,11 @@ export class ShapeManager {
   private currentGameplayType: string = '';
   private suggestedSkills: string[] = [];
 
-  // Track recent shapes to prevent duplicates within gap
-  // If shape L is spawned, it won't appear again for at least SHAPE_GAP tetrominos
-  private recentShapes: string[] = [];
-  private readonly SHAPE_GAP: number = 4; // Minimum gap before same shape can appear again
+  // Track recent shape groups to prevent duplicates within gap
+  // Shape groups: S/Z are treated as same, L/J are treated as same
+  // If L is spawned, neither L nor J will appear for at least SHAPE_GAP tetrominos
+  private recentShapeGroups: string[] = [];
+  private readonly SHAPE_GAP: number = 4; // Minimum gap before same shape group can appear again
 
   // Track recent labels to prevent duplicates within gap
   // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetrominos
@@ -40,9 +41,23 @@ export class ShapeManager {
    * Reset state untuk game baru
    */
   reset(): void {
-    this.recentShapes = [];
+    this.recentShapeGroups = [];
     this.recentLabels = [];
     this.usedLabels.clear();
+  }
+
+  /**
+   * Get shape group for duplicate prevention
+   * S/Z are treated as same group, L/J are treated as same group
+   */
+  private getShapeGroup(shapeName: string): string {
+    if (shapeName === 's' || shapeName === 'z') {
+      return 'sz'; // S and Z are similar shapes
+    }
+    if (shapeName === 'l' || shapeName === 'j') {
+      return 'lj'; // L and J are similar shapes
+    }
+    return shapeName; // I, O, T are unique
   }
 
   /**
@@ -130,7 +145,8 @@ export class ShapeManager {
   /**
    * Get random shape dari shape data
    * Di adapter mode, filter shape S dan Z
-   * Mencegah bentuk yang sama muncul dalam SHAPE_GAP tetromino terakhir
+   * Mencegah bentuk yang sama (atau grup yang sama) muncul dalam SHAPE_GAP tetromino terakhir
+   * Shape groups: S/Z sama, L/J sama
    */
   private getRandomShape(): ShapeData {
     // Filter shape berdasarkan gameplay type
@@ -143,21 +159,21 @@ export class ShapeManager {
       );
     }
 
-    // Exclude recent shapes to ensure minimum gap before same shape appears again
-    // Only exclude if there are enough shapes available
-    if (this.recentShapes.length > 0 && availableShapes.length > this.recentShapes.length) {
+    // Exclude recent shape groups to ensure minimum gap before same shape group appears again
+    // S/Z treated as same group, L/J treated as same group
+    if (this.recentShapeGroups.length > 0 && availableShapes.length > this.recentShapeGroups.length) {
       availableShapes = availableShapes.filter(shape =>
-        !this.recentShapes.includes(shape.shape_name)
+        !this.recentShapeGroups.includes(this.getShapeGroup(shape.shape_name))
       );
     }
 
     const randomIndex = Math.floor(Math.random() * availableShapes.length);
     const selectedShape = availableShapes[randomIndex];
 
-    // Add to recent shapes and maintain max size of SHAPE_GAP
-    this.recentShapes.push(selectedShape.shape_name);
-    if (this.recentShapes.length > this.SHAPE_GAP) {
-      this.recentShapes.shift(); // Remove oldest shape
+    // Add shape group to recent and maintain max size of SHAPE_GAP
+    this.recentShapeGroups.push(this.getShapeGroup(selectedShape.shape_name));
+    if (this.recentShapeGroups.length > this.SHAPE_GAP) {
+      this.recentShapeGroups.shift(); // Remove oldest shape group
     }
 
     return selectedShape;
