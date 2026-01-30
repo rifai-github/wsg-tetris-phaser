@@ -353,6 +353,13 @@ export class TetrisScene extends Phaser.Scene {
    * Handle info button click - pauses game and notifies parent
    */
   private handleInfoClick(): void {
+
+    if (this.isPaused)
+    {
+      this.resumeGame();
+      return;
+    }
+
     // Pause the game
     this.pauseGame();
 
@@ -361,8 +368,6 @@ export class TetrisScene extends Phaser.Scene {
       type: 'INFO_CLICKED',
       timestamp: Date.now()
     }, '*');
-
-    console.log('Info button clicked - game paused');
   }
 
   /**

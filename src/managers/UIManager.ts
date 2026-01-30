@@ -243,7 +243,7 @@ export class UIManager {
     // Create text first to measure dimensions
     // Text bagian putih
     const instructionText1 = this.scene.add.text(
-      centerX - 40,
+      centerX - 20,
       instructionY + paddingY,
       'Organize the blocks and fill the gaps to enhance your skills.',
       {
@@ -260,7 +260,7 @@ export class UIManager {
 
     // Text bagian warna dinamis (dari config)
     const instructionText2 = this.scene.add.text(
-      centerX - 40,
+      centerX - 20,
       instructionY + paddingY + instructionText1.height,
       gameplayConfig?.instruction_text || '',
       // 'Select your block perfectly to make great foundation!' || '',
@@ -291,7 +291,7 @@ export class UIManager {
 
     // Add info button to the right of instruction section
     const infoButtonSize = 20 * GAME_CONSTANTS.SCALE_FACTOR;
-    const rightEdge = GAME_CONSTANTS.PLAY_AREA_WIDTH - (5 * GAME_CONSTANTS.SCALE_FACTOR);// - infoButtonSize;// + (bgWidth / 2);
+    const rightEdge = centerX + (bgWidth / 2) - infoButtonSize - 30;
 
     this.infoButton = this.scene.add.image(
       rightEdge + (infoButtonSize / 2),
