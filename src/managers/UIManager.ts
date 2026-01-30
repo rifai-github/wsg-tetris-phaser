@@ -484,11 +484,13 @@ export class UIManager {
         this.muteButton!.setTint(0xcccccc);
         this.isMuted = !this.isMuted;
 
-        // Visual feedback: reduce alpha when muted
+        // Change button texture based on mute state
+        // When muted: show unmute icon (speaker with X)
+        // When not muted: show mute icon (normal speaker)
         if (this.isMuted) {
-          this.muteButton!.setAlpha(0.5);
+          this.muteButton!.setTexture('button_unmute');
         } else {
-          this.muteButton!.setAlpha(1);
+          this.muteButton!.setTexture('button_mute');
         }
 
         onMuteToggle(this.isMuted);

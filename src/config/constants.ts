@@ -115,6 +115,7 @@ export const ASSET_PATHS = {
     DOWN: '/images/button/down.png',
     ROTATE: '/images/button/rotate.png',
     MUTE: '/images/mute.png',
+    UNMUTE: '/images/unmute.png',
     INFO: '/images/info.png',
   },
 

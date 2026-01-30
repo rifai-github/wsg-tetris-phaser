@@ -97,6 +97,7 @@ export class TetrisScene extends Phaser.Scene {
     this.load.image('button_down', ASSET_PATHS.BUTTONS.DOWN);
     this.load.image('button_rotate', ASSET_PATHS.BUTTONS.ROTATE);
     this.load.image('button_mute', ASSET_PATHS.BUTTONS.MUTE);
+    this.load.image('button_unmute', ASSET_PATHS.BUTTONS.UNMUTE);
     this.load.image('button_info', ASSET_PATHS.BUTTONS.INFO);
 
     // Load shape data JSON
