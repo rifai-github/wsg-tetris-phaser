@@ -451,6 +451,12 @@ export class TetrisScene extends Phaser.Scene {
     this.isCountdownActive = true;
     this.countdownTimer = this.countdownDuration;
 
+    // Notify parent that game is starting (before countdown animation)
+    window.parent.postMessage({
+      type: 'GAME_STARTING',
+      timestamp: Date.now()
+    }, '*');
+
     // Create Lottie animation container
     this.createLottieCountdown();
   }
