@@ -13,6 +13,8 @@ WSG Tetris Game is a Phaser 3-based Tetris implementation with workforce skills 
 The game supports iframe embedding with parent-window messaging via PostMessage API:
 
 **Game → Parent Messages:**
+- `GAME_STARTING`: Sent before countdown animation begins
+  - Format: `{ type: 'GAME_STARTING', timestamp: number }`
 - `PHASER_IMAGE`: Sent on game over, contains base64 screenshot data and timestamp
   - Format: `{ type: 'PHASER_IMAGE', screenshot: string, timestamp: number }`
 - `GAME_PAUSED`: Sent when game is paused

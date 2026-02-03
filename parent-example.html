@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Game Parent</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .iframe-wrapper {
+            border: 3px solid #00d4ff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            max-width: 430px; /* Max width for iframe */
+            width: 100%;
+        }
+
+        iframe {
+            display: block;
+            border: none;
+            width: 100%;
+            height: 100vh; /* Dynamic height based on viewport */
+            min-height: 600px; /* Minimum height */
+        }
+
+        .screenshot-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .screenshot-wrapper {
+            background: #16213e;
+            border: 3px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .screenshot-wrapper h2 {
+            margin-top: 0;
+            color: #00d4ff;
+            font-size: 18px;
+        }
+
+        #screenshotImage {
+            width: 100%;
+            border-radius: 8px;
+            background: #0f3460;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        #screenshotImage img {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #0f3460;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .info p {
+            margin: 5px 0;
+        }
+
+        .btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #00b8d4;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            background: #16213e;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .status.active {
+            background: #1b5e20;
+        }
+
+        .status.gameover {
+            background: #b71c1c;
+        }
+
+        /* Quality comparison section */
+        .quality-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+        }
+
+        .quality-section h2 {
+            color: #00d4ff;
+            margin-top: 0;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .comparison-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quality-card {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            flex: 1;
+            min-width: 280px;
+            max-width: 380px;
+            border: 2px solid #1a1a2e;
+        }
+
+        .quality-card h3 {
+            color: #00d4ff;
+            margin-top: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quality-card .example-text {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ffffff;
+        }
+
+        .quality-card .example-text.sharp {
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .quality-card .example-text.pixelated {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .quality-card .example-image {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .quality-card ul {
+            margin: 15px 0;
+            padding-left: 20px;
+            color: #b0b0b0;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .quality-card ul li {
+            margin: 8px 0;
+        }
+
+        .quality-card .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-badge.excellent {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-badge.poor {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 WSG Tetris Game</h1>
+        
+        <div id="status" class="status active">
+            Game is running...
+        </div>
+
+        <div class="game-container">
+            <!-- Game iframe -->
+            <div class="iframe-wrapper">
+                <iframe 
+                    id="gameIframe"
+                    src="http://192.168.1.9:3000?type=explorer" 
+                    width="393" 
+                    height="852">
+                </iframe>
+            </div>
+
+            <!-- Screenshot display -->
+            <div class="screenshot-section">
+                <div class="screenshot-wrapper">
+                    <h2>📸 Game Over Screenshot</h2>
+                    <div id="screenshotImage">
+                        Waiting for game over...
+                    </div>
+                    <div class="info">
+                        <p><strong>Status:</strong> <span id="screenshotStatus">No screenshot yet</span></p>
+                        <p><strong>Timestamp:</strong> <span id="screenshotTime">-</span></p>
+                    </div>
+                    <button class="btn" id="downloadBtn" style="display: none;">
+                        💾 Download Screenshot
+                    </button>
+                    <button class="btn" id="restartBtn" style="display: none; background: #4caf50;">
+                        🔄 Restart Game
+                    </button>
+                    <button class="btn" id="pauseBtn" style="background: #ff9800;">
+                        ⏸️ Pause Game
+                    </button>
+                    <button class="btn" id="resumeBtn" style="display: none; background: #2196f3;">
+                        ▶️ Resume Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quality comparison section -->
+        <div class="quality-section">
+            <h2>📊 Parent WebApp vs Phaser Iframe Quality Comparison</h2>
+            <div class="comparison-container">
+                <!-- Parent WebApp Quality -->
+                <div class="quality-card">
+                    <h3>
+                        <span>✅</span>
+                        Parent WebApp (Native HTML)
+                        <span class="status-badge excellent">EXCELLENT</span>
+                    </h3>
+
+                    <div class="example-text sharp">
+                        Arrange your skills and traits to find your fit
+                    </div>
+
+                    <div class="example-image">
+                        Native DOM Elements - Sharp & Crisp
+                    </div>
+
+                    <ul>
+                        <li>✅ Text rendered at native resolution</li>
+                        <li>✅ Browser's optimized text rendering</li>
+                        <li>✅ Automatic high-DPI scaling</li>
+                        <li>✅ Subpixel anti-aliasing</li>
+                        <li>✅ OS-level font smoothing</li>
+                        <li>✅ Crisp edges on all devices</li>
+                    </ul>
+                </div>
+
+                <!-- Phaser Iframe Quality -->
+                <div class="quality-card">
+                    <h3>
+                        <span>⚠️</span>
+                        Phaser Iframe (Canvas)
+                        <span class="status-badge poor">PIXELATED</span>
+                    </h3>
+
+                    <div class="example-text pixelated">
+                        Arrange your skills and traits to find your fit
+                    </div>
+
+                    <div class="example-image" style="image-rendering: pixelated;">
+                        Canvas Rendering - Pixelated & Blurry
+                    </div>
+
+                    <ul>
+                        <li>❌ Canvas needs manual high-DPI handling</li>
+                        <li>❌ WebGL text rendering limitations</li>
+                        <li>❌ Requires devicePixelRatio scaling</li>
+                        <li>❌ Texture filtering can cause blur</li>
+                        <li>❌ Double scaling causes pixelation</li>
+                        <li>❌ Edges appear jagged/pixelated</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 20px; color: #b0b0b0; font-size: 14px;">
+                💡 <strong>Screenshot Instructions:</strong> Take screenshots of both the parent webapp and the Phaser iframe
+                to compare rendering quality. The parent uses native HTML/CSS while the iframe uses Phaser WebGL canvas.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentScreenshot = null;
+
+        // Listen for messages from iframe
+        window.addEventListener('message', (event) => {
+            console.log('Message received:', event.data);
+
+            if (event.data.type === 'GAME_PAUSED') {
+                console.log('Game paused at:', new Date(event.data.timestamp).toLocaleString());
+                document.getElementById('status').textContent = '⏸️ Game is paused';
+                document.getElementById('status').className = 'status';
+                document.getElementById('status').style.background = '#ff9800';
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'block';
+            }
+
+            if (event.data.type === 'GAME_RESUMED') {
+                console.log('Game resumed at:', new Date(event.data.timestamp).toLocaleString());
+                document.getElementById('status').textContent = 'Game is running...';
+                document.getElementById('status').className = 'status active';
+                document.getElementById('status').style.background = '';
+                document.getElementById('pauseBtn').style.display = 'block';
+                document.getElementById('resumeBtn').style.display = 'none';
+            }
+
+            if (event.data.type === 'GAME_MUTED') {
+                console.log('Game muted at:', new Date(event.data.timestamp).toLocaleString());
+                // Parent can handle muting its own audio here
+                console.log('Parent should mute its audio now');
+            }
+
+            if (event.data.type === 'GAME_UNMUTED') {
+                console.log('Game unmuted at:', new Date(event.data.timestamp).toLocaleString());
+                // Parent can handle unmuting its own audio here
+                console.log('Parent should unmute its audio now');
+            }
+
+            if (event.data.type === 'INFO_CLICKED') {
+                console.log('Info button clicked at:', new Date(event.data.timestamp).toLocaleString());
+                // Parent can show info modal or instructions here
+                // Game is automatically paused when info button is clicked
+                document.getElementById('status').textContent = 'ℹ️ Info - Game paused';
+                document.getElementById('status').className = 'status';
+                document.getElementById('status').style.background = '#9c27b0';
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'block';
+            }
+
+            if (event.data.type === 'PHASER_IMAGE') {
+                const screenshot = event.data.screenshot;
+                const timestamp = event.data.timestamp;
+
+                // Store screenshot
+                currentScreenshot = screenshot;
+
+                // Update status
+                document.getElementById('status').textContent = '🎮 Game Over! Click Restart to play again.';
+                document.getElementById('status').className = 'status gameover';
+
+                // Display screenshot
+                const screenshotDiv = document.getElementById('screenshotImage');
+                screenshotDiv.innerHTML = `<img src="${screenshot}" alt="Game Over Screenshot">`;
+
+                // Update info
+                document.getElementById('screenshotStatus').textContent = 'Screenshot captured!';
+                document.getElementById('screenshotStatus').style.color = '#4caf50';
+                
+                const date = new Date(timestamp);
+                document.getElementById('screenshotTime').textContent = date.toLocaleString();
+
+                // Show download and restart buttons, hide pause/resume
+                document.getElementById('downloadBtn').style.display = 'block';
+                document.getElementById('restartBtn').style.display = 'block';
+                document.getElementById('pauseBtn').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'none';
+            }
+        });
+
+        // Download button handler
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (currentScreenshot) {
+                const link = document.createElement('a');
+                link.download = `tetris-game-over-${Date.now()}.png`;
+                link.href = currentScreenshot;
+                link.click();
+            }
+        });
+
+        // Restart button handler
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            const iframe = document.getElementById('gameIframe');
+            
+            // Send restart message to iframe
+            iframe.contentWindow.postMessage({
+                type: 'restart'
+            }, '*');
+
+            console.log('Restart message sent to iframe');
+
+            // Update UI
+            document.getElementById('status').textContent = 'Game is restarting...';
+            document.getElementById('status').className = 'status active';
+
+            // Hide buttons, show pause button
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('restartBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'block';
+            document.getElementById('resumeBtn').style.display = 'none';
+
+            // Reset screenshot display after delay
+            setTimeout(() => {
+                document.getElementById('screenshotImage').innerHTML = 'Waiting for game over...';
+                document.getElementById('screenshotStatus').textContent = 'No screenshot yet';
+                document.getElementById('screenshotStatus').style.color = '#fff';
+                document.getElementById('screenshotTime').textContent = '-';
+                currentScreenshot = null;
+            }, 500);
+        });
+
+        // Pause button handler
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            const iframe = document.getElementById('gameIframe');
+
+            // Send pause message to iframe
+            iframe.contentWindow.postMessage({
+                type: 'pause'
+            }, '*');
+
+            console.log('Pause message sent to iframe');
+        });
+
+        // Resume button handler
+        document.getElementById('resumeBtn').addEventListener('click', () => {
+            const iframe = document.getElementById('gameIframe');
+
+            // Send resume message to iframe
+            iframe.contentWindow.postMessage({
+                type: 'resume'
+            }, '*');
+
+            console.log('Resume message sent to iframe');
+        });
+
+        // Optional: Get screenshot directly from iframe
+        function getScreenshotFromIframe() {
+            const iframe = document.getElementById('gameIframe');
+            try {
+                const screenshot = iframe.contentWindow.tetrisGameOverScreenshot;
+                if (screenshot) {
+                    console.log('Screenshot retrieved directly:', screenshot);
+                    return screenshot;
+                }
+            } catch (e) {
+                console.log('Cannot access iframe directly (CORS):', e);
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>

@@ -296,6 +296,31 @@ The explorer mode uses a sophisticated six-factor scoring system:
     - "join the dots today" → ["join the", "dots today"] (2+2)
     - "join the dots today please" → ["join the dots", "today please"] (3+2)
 
+## Parent Frame Integration
+
+The game supports iframe embedding with parent-window messaging via PostMessage API:
+
+**Game → Parent Messages:**
+- `GAME_STARTING`: Sent before countdown animation begins
+  - Format: `{ type: 'GAME_STARTING', timestamp: number }`
+- `PHASER_IMAGE`: Sent on game over, contains base64 screenshot data
+  - Format: `{ type: 'PHASER_IMAGE', screenshot: string, timestamp: number }`
+- `GAME_PAUSED`: Sent when game is paused
+  - Format: `{ type: 'GAME_PAUSED', timestamp: number }`
+- `GAME_RESUMED`: Sent when game is resumed
+  - Format: `{ type: 'GAME_RESUMED', timestamp: number }`
+- `GAME_MUTED` / `GAME_UNMUTED`: Sent when audio is toggled
+  - Format: `{ type: 'GAME_MUTED', isMuted: boolean, timestamp: number }`
+- `INFO_CLICKED`: Sent when info button is clicked (also pauses game)
+  - Format: `{ type: 'INFO_CLICKED', timestamp: number }`
+
+**Parent → Game Messages:**
+- `restart`: Triggers game restart
+- `pause`: Pauses the game
+- `resume`: Resumes a paused game
+
+Reference implementation available in `parent-example.html`.
+
 ## Browser Support
 
 - Chrome/Chromium (recommended)
