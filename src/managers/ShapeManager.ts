@@ -14,7 +14,7 @@ export class ShapeManager {
   // Shape groups: S/Z are treated as same, L/J are treated as same
   // If L is spawned, neither L nor J will appear for at least SHAPE_GAP tetrominos
   private recentShapeGroups: string[] = [];
-  private readonly SHAPE_GAP: number = 4; // Minimum gap before same shape group can appear again
+  private readonly SHAPE_GAP: number = 3; // Minimum gap before same shape group can appear again
 
   // Track recent labels to prevent duplicates within gap
   // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetrominos
