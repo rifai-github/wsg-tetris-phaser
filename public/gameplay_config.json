@@ -14,7 +14,7 @@
             "skip"
         ],
         "play_area": "/images/play_area/builder.png",
-        "instruction_text": "Select your block perfectly to make great foundation!",
+        "instruction_text": "Select block to make great foundation!",
         "instruction_text_color": "#70C3FF"
     },
     {

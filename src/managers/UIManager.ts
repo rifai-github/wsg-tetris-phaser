@@ -238,41 +238,44 @@ export class UIManager {
   private createInstructionSection(x: number, y: number, gameplayConfig?: GameplayConfig | null): number {
     const centerX = x;
     const instructionY = y;
-    const paddingY = 5 * GAME_CONSTANTS.SCALE_FACTOR; // Vertical padding
+    const paddingY = 7 * GAME_CONSTANTS.SCALE_FACTOR; // Vertical padding
 
     // Create text first to measure dimensions
-    // Text bagian putih
+    // Right-align position: right edge of bg minus info button area
+    const infoButtonArea = (20 * GAME_CONSTANTS.SCALE_FACTOR) + 30 + (10 * GAME_CONSTANTS.SCALE_FACTOR);
+    const textRightX = centerX + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2) - infoButtonArea;
+
+    // Text bagian putih (rata kanan)
     const instructionText1 = this.scene.add.text(
-      centerX - 20,
+      textRightX,
       instructionY + paddingY,
-      'Organize the blocks and fill the gaps to enhance your skills.',
+      'Organize the blocks and fill the gaps',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(12 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#353535',
         fontStyle: '600',
-        align: 'center',
-        wordWrap: { width: GAME_CONSTANTS.PLAY_AREA_WIDTH - 240 } // 40px padding kiri-kanan
+        align: 'right',
+        // wordWrap: { width: GAME_CONSTANTS.PLAY_AREA_WIDTH - 240 } // 40px padding kiri-kanan
       }
     );
-    instructionText1.setOrigin(0.5, 0);
+    instructionText1.setOrigin(1, 0);
     instructionText1.setResolution(2);
 
-    // Text bagian warna dinamis (dari config)
+    // Text bagian warna dinamis (dari config, rata kanan)
     const instructionText2 = this.scene.add.text(
-      centerX - 20,
+      textRightX,
       instructionY + paddingY + instructionText1.height,
       gameplayConfig?.instruction_text || '',
-      // 'Select your block perfectly to make great foundation!' || '',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
-        fontSize: Math.floor(12 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
+        fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
-        align: 'center',
+        align: 'right',
       }
     );
-    instructionText2.setOrigin(0.5, 0);
+    instructionText2.setOrigin(1, 0);
     instructionText2.setResolution(2);
 
     // Calculate dimensions for background
