@@ -238,16 +238,12 @@ export class UIManager {
   private createInstructionSection(x: number, y: number, gameplayConfig?: GameplayConfig | null): number {
     const centerX = x;
     const instructionY = y;
-    const paddingY = 7 * GAME_CONSTANTS.SCALE_FACTOR; // Vertical padding
+    const paddingY = 5 * GAME_CONSTANTS.SCALE_FACTOR; // Vertical padding
 
     // Create text first to measure dimensions
-    // Right-align position: right edge of bg minus info button area
-    const infoButtonArea = (20 * GAME_CONSTANTS.SCALE_FACTOR) + 30 + (10 * GAME_CONSTANTS.SCALE_FACTOR);
-    const textRightX = centerX + (GAME_CONSTANTS.PLAY_AREA_WIDTH / 2) - infoButtonArea;
-
-    // Text bagian putih (rata kanan)
+    // Text bagian putih
     const instructionText1 = this.scene.add.text(
-      textRightX,
+      centerX - 20,
       instructionY + paddingY,
       'Organize the blocks and fill the gaps',
       {
@@ -255,16 +251,16 @@ export class UIManager {
         fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: '#353535',
         fontStyle: '600',
-        align: 'right',
+        align: 'center',
         // wordWrap: { width: GAME_CONSTANTS.PLAY_AREA_WIDTH - 240 } // 40px padding kiri-kanan
       }
     );
-    instructionText1.setOrigin(1, 0);
+    instructionText1.setOrigin(0.5, 0);
     instructionText1.setResolution(2);
 
     // Text bagian warna dinamis (dari config, rata kanan)
     const instructionText2 = this.scene.add.text(
-      textRightX,
+      centerX - 20,
       instructionY + paddingY + instructionText1.height,
       gameplayConfig?.instruction_text || '',
       {
@@ -272,10 +268,10 @@ export class UIManager {
         fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
         color: gameplayConfig?.instruction_text_color || '#FFFFFF',
         fontStyle: '600',
-        align: 'right',
+        align: 'center',
       }
     );
-    instructionText2.setOrigin(1, 0);
+    instructionText2.setOrigin(0.5, 0);
     instructionText2.setResolution(2);
 
     // Calculate dimensions for background
