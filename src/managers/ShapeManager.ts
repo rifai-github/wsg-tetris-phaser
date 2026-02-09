@@ -9,6 +9,11 @@ export class ShapeManager {
   private usedLabels: Set<string> = new Set();
   private currentGameplayType: string = '';
   private suggestedSkills: string[] = [];
+  private noDuplicates: string[] = [];
+
+  // Track used labels from noDuplicates list
+  // When all noDuplicates labels are used, reset the set to allow cycle repeat
+  private usedNoDuplicates: Set<string> = new Set();
 
   // Track recent shape groups to prevent duplicates within gap
   // Shape groups: S/Z are treated as same, L/J are treated as same
@@ -17,7 +22,7 @@ export class ShapeManager {
   private readonly SHAPE_GAP: number = 3; // Minimum gap before same shape group can appear again
 
   // Track recent labels to prevent duplicates within gap
-  // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetrominos
+  // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetromino
   private recentLabels: string[] = [];
   private readonly LABEL_GAP: number = 4; // Minimum gap before same label can appear again
 
@@ -38,12 +43,20 @@ export class ShapeManager {
   }
 
   /**
+   * Set no duplicates list from URL parameter
+   */
+  setNoDuplicates(noDuplicates: string[]): void {
+    this.noDuplicates = noDuplicates;
+  }
+
+  /**
    * Reset state untuk game baru
    */
   reset(): void {
     this.recentShapeGroups = [];
     this.recentLabels = [];
     this.usedLabels.clear();
+    this.usedNoDuplicates.clear();
   }
 
   /**
@@ -58,6 +71,41 @@ export class ShapeManager {
       return 'lj'; // L and J are similar shapes
     }
     return shapeName; // I, O, T are unique
+  }
+
+  /**
+   * Check if label can be used based on no_duplicates rules
+   * Returns true if label can be used, false if it should be skipped
+   */
+  private canUseLabel(label: string): boolean {
+    // If label not in noDuplicates list, it can always be used
+    if (!this.noDuplicates.includes(label)) {
+      return true;
+    }
+
+    // Check if all noDuplicates labels have been used - if yes, reset cycle
+    if (this.usedNoDuplicates.size >= this.noDuplicates.length) {
+      console.log('All no_duplicates labels used, resetting cycle');
+      this.usedNoDuplicates.clear();
+    }
+
+    // If label is in noDuplicates and already used, skip it
+    if (this.usedNoDuplicates.has(label)) {
+      return false;
+    }
+
+    // Label is in noDuplicates but not used yet, can be used
+    return true;
+  }
+
+  /**
+   * Mark label as used (for no_duplicates tracking)
+   */
+  private markLabelAsUsed(label: string): void {
+    if (this.noDuplicates.includes(label)) {
+      this.usedNoDuplicates.add(label);
+      console.log(`Marked "${label}" as used (${this.usedNoDuplicates.size}/${this.noDuplicates.length})`);
+    }
   }
 
   /**
@@ -245,6 +293,12 @@ export class ShapeManager {
       return null;
     }
 
+    // Filter out labels that can't be used based on no_duplicates rules
+    const availableByNoDuplicates = multiWordLabels.filter(label => this.canUseLabel(label));
+    if (availableByNoDuplicates.length > 0) {
+      multiWordLabels = availableByNoDuplicates;
+    }
+
     // Filter out recent labels to ensure minimum gap
     if (this.recentLabels.length > 0 && multiWordLabels.length > 1) {
       const filtered = multiWordLabels.filter(label => !this.recentLabels.includes(label));
@@ -256,6 +310,9 @@ export class ShapeManager {
     // Select random multi-word label
     const selected = multiWordLabels[Math.floor(Math.random() * multiWordLabels.length)];
     const words = selected.split(' ');
+
+    // Mark as used for no_duplicates tracking
+    this.markLabelAsUsed(selected);
 
     // Add to recent labels and maintain max size of LABEL_GAP
     this.recentLabels.push(selected);
@@ -282,20 +339,36 @@ export class ShapeManager {
       return 'Label';
     }
 
-    // Filter out recent labels to ensure minimum gap
-    let availableLabels = labels;
-    if (this.recentLabels.length > 0 && labels.length > this.recentLabels.length) {
-      availableLabels = labels.filter(label => !this.recentLabels.includes(label));
-    }
+    // Filter out labels that can't be used based on no_duplicates rules
+    let availableLabels = labels.filter(label => this.canUseLabel(label));
 
-    // If all labels are recent, use all labels (fallback)
+    // If no labels available due to no_duplicates, use all labels (fallback)
     if (availableLabels.length === 0) {
       availableLabels = labels;
+    }
+
+    // Filter out recent labels to ensure minimum gap
+    if (this.recentLabels.length > 0 && availableLabels.length > this.recentLabels.length) {
+      const filtered = availableLabels.filter(label => !this.recentLabels.includes(label));
+      if (filtered.length > 0) {
+        availableLabels = filtered;
+      }
+    }
+
+    // If all labels are recent, reset to labels filtered by no_duplicates only
+    if (availableLabels.length === 0) {
+      availableLabels = labels.filter(label => this.canUseLabel(label));
+      if (availableLabels.length === 0) {
+        availableLabels = labels; // Ultimate fallback
+      }
     }
 
     // Select random label from available
     const randomIndex = Math.floor(Math.random() * availableLabels.length);
     const selectedLabel = availableLabels[randomIndex];
+
+    // Mark as used for no_duplicates tracking
+    this.markLabelAsUsed(selectedLabel);
 
     // Add to recent labels and maintain max size of LABEL_GAP
     this.recentLabels.push(selectedLabel);

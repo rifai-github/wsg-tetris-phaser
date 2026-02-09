@@ -74,8 +74,9 @@ Customize gameplay via query parameters:
 - `?timer=<seconds>`: Set custom countdown duration (default: 60)
 - `?username=<name>`: Display custom username in profile section
 - `?suggested_skills=<JSON_array>`: Custom skills labels (URL-encoded JSON array). Labels assigned sequentially and cycle through all skills. Falls back to `label_block.json` if not provided.
+- `?no_duplicates=<JSON_array>`: Skills that can only appear once per cycle (URL-encoded JSON array). When all no_duplicates labels are used, the cycle resets and they become available again.
 
-Example: `game.html?type=adapter&timer=15&username=John&suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%5D`
+Example: `game.html?type=adapter&timer=15&username=John&suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%5D&no_duplicates=%5B%22Adaptable%22%5D`
 
 ## Architecture
 
@@ -88,6 +89,7 @@ The game uses a manager-based architecture where [TetrisScene.ts](src/scenes/Tet
 - Generates random tetrominos with skill labels
 - Handles rotation logic via matrix transformation
 - Manages label assignment: S and Z shapes get two-word labels when available (e.g., "Future Ready"), other shapes get single labels
+- Enforces `no_duplicates` rule: tracks labels that can only appear once per cycle, resets when all are used
 
 **TetrominoRenderer** ([TetrominoRenderer.ts](src/managers/TetrominoRenderer.ts))
 - Renders active and preview tetrominos

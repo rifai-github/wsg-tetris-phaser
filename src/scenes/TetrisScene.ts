@@ -202,6 +202,20 @@ export class TetrisScene extends Phaser.Scene {
       }
     }
 
+    // Get no_duplicates from query parameter
+    // Format: ?no_duplicates=%5B%22Adaptable%22%5D = ["Adaptable"]
+    const noDuplicatesParam = urlParams.get('no_duplicates');
+    let noDuplicates: string[] = [];
+    if (noDuplicatesParam) {
+      try {
+        // Decode URL-encoded JSON array
+        noDuplicates = JSON.parse(decodeURIComponent(noDuplicatesParam));
+        console.log('No duplicates loaded:', noDuplicates);
+      } catch (e) {
+        console.error('Failed to parse no_duplicates parameter:', e);
+      }
+    }
+
     // Find current gameplay config based on URL parameter
     this.currentGameplayConfig = this.gameplayConfigs.find(config => config.type === typeParam) || null;
 
@@ -210,6 +224,9 @@ export class TetrisScene extends Phaser.Scene {
 
     // Set suggested skills from URL parameter
     this.shapeManager.setSuggestedSkills(suggestedSkills);
+
+    // Set no_duplicates from URL parameter
+    this.shapeManager.setNoDuplicates(noDuplicates);
 
     // Load play area image dynamically if specified, otherwise use default
     const playAreaPath = this.currentGameplayConfig?.play_area || ASSET_PATHS.DEFAULT_PLAY_AREA;
