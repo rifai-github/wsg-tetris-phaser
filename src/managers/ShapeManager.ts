@@ -11,6 +11,9 @@ export class ShapeManager {
   private suggestedSkills: string[] = [];
   private noDuplicates: string[] = [];
 
+  // Track current index for sequential label selection
+  private currentLabelIndex: number = 0;
+
   // Track used labels from noDuplicates list
   // When all noDuplicates labels are used, reset the set to allow cycle repeat
   private usedNoDuplicates: Set<string> = new Set();
@@ -37,16 +40,40 @@ export class ShapeManager {
 
   /**
    * Set suggested skills from URL parameter
+   * Shuffles the array first for variety, then uses sequentially
    */
   setSuggestedSkills(skills: string[]): void {
-    this.suggestedSkills = skills;
+    // Shuffle the array for variety between game sessions
+    this.suggestedSkills = this.shuffleArray([...skills]);
+    console.log('Shuffled suggested skills:', this.suggestedSkills);
+  }
+
+  /**
+   * Shuffle array using Fisher-Yates algorithm
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   /**
    * Set no duplicates list from URL parameter
+   * Filters to only include labels that are actually in suggested_skills
    */
   setNoDuplicates(noDuplicates: string[]): void {
-    this.noDuplicates = noDuplicates;
+    // Only keep no_duplicates items that exist in suggested_skills
+    if (this.suggestedSkills.length > 0) {
+      this.noDuplicates = noDuplicates.filter(label =>
+        this.suggestedSkills.includes(label)
+      );
+      console.log('Filtered no_duplicates (only items in suggested_skills):', this.noDuplicates);
+    } else {
+      this.noDuplicates = noDuplicates;
+    }
   }
 
   /**
@@ -57,6 +84,7 @@ export class ShapeManager {
     this.recentLabels = [];
     this.usedLabels.clear();
     this.usedNoDuplicates.clear();
+    this.currentLabelIndex = 0;
   }
 
   /**
@@ -83,12 +111,6 @@ export class ShapeManager {
       return true;
     }
 
-    // Check if all noDuplicates labels have been used - if yes, reset cycle
-    if (this.usedNoDuplicates.size >= this.noDuplicates.length) {
-      console.log('All no_duplicates labels used, resetting cycle');
-      this.usedNoDuplicates.clear();
-    }
-
     // If label is in noDuplicates and already used, skip it
     if (this.usedNoDuplicates.has(label)) {
       return false;
@@ -99,6 +121,22 @@ export class ShapeManager {
   }
 
   /**
+   * Check and reset no_duplicates cycle if all labels have been used
+   * Should be called at the start of label selection
+   */
+  private checkAndResetNoDuplicatesCycle(): void {
+    if (this.noDuplicates.length === 0) {
+      return;
+    }
+
+    // Reset cycle if all no_duplicates labels have been used
+    if (this.usedNoDuplicates.size >= this.noDuplicates.length) {
+      console.log('All no_duplicates labels used, resetting cycle');
+      this.usedNoDuplicates.clear();
+    }
+  }
+
+  /**
    * Mark label as used (for no_duplicates tracking)
    */
   private markLabelAsUsed(label: string): void {
@@ -106,6 +144,30 @@ export class ShapeManager {
       this.usedNoDuplicates.add(label);
       console.log(`Marked "${label}" as used (${this.usedNoDuplicates.size}/${this.noDuplicates.length})`);
     }
+  }
+
+  /**
+   * Check if there are any valid 2-word labels available
+   * Used to determine if S/Z shapes can be spawned
+   */
+  private hasValidTwoWordLabels(): boolean {
+    // Get available labels (suggested_skills or fallback)
+    let availableLabels: string[] = [];
+    if (this.suggestedSkills.length > 0) {
+      availableLabels = this.suggestedSkills;
+    }
+
+    // Filter to only multi-word labels
+    const multiWordLabels = availableLabels.filter(label => label.includes(' '));
+
+    // Check if any multi-word label can be used (not blocked by no_duplicates)
+    for (const label of multiWordLabels) {
+      if (this.canUseLabel(label)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -127,7 +189,19 @@ export class ShapeManager {
    * Untuk next tetromino (terfilter berdasarkan gameplay mode)
    */
   generateRandomTetromino(): Tetromino {
-    const randomShape = this.getRandomShape();
+    let randomShape = this.getRandomShape();
+
+    // If shape is S or Z and no valid 2-word labels available, re-roll to get different shape
+    const maxRerollAttempts = 10;
+    let rerollAttempts = 0;
+    while ((randomShape.shape_name === 's' || randomShape.shape_name === 'z') &&
+           !this.hasValidTwoWordLabels() &&
+           rerollAttempts < maxRerollAttempts) {
+      console.log(`Shape ${randomShape.shape_name.toUpperCase()} selected but no valid 2-word labels, re-rolling...`);
+      randomShape = this.getRandomShape();
+      rerollAttempts++;
+    }
+
     const labels = this.getLabelsForShape(randomShape);
 
     // Generate random rotation (0, 90, 180, 270)
@@ -277,7 +351,7 @@ export class ShapeManager {
   /**
    * Cari label yang terdiri dari multi-kata dan bagi menjadi 2 bagian seimbang
    * Untuk shape S dan Z yang punya 2 text position
-   * Juga track label di recentLabels untuk mencegah duplikat
+   * Menggunakan sequential selection dari multi-word labels
    *
    * Contoh:
    * - 2 kata "data analytics" → ["data", "analytics"]
@@ -287,28 +361,71 @@ export class ShapeManager {
    */
   private getTwoWordLabelFromArray(labels: string[]): string[] | null {
     // Filter multi-word labels
-    let multiWordLabels = labels.filter(label => label.includes(' '));
+    const multiWordLabels = labels.filter(label => label.includes(' '));
 
     if (multiWordLabels.length === 0) {
       return null;
     }
 
-    // Filter out labels that can't be used based on no_duplicates rules
-    const availableByNoDuplicates = multiWordLabels.filter(label => this.canUseLabel(label));
-    if (availableByNoDuplicates.length > 0) {
-      multiWordLabels = availableByNoDuplicates;
+    // Try to find next valid multi-word label starting from current index
+    let attempts = 0;
+    const maxAttempts = labels.length * 2;
+    let selected: string | null = null;
+    let foundWithoutReset = false;
+
+    while (attempts < maxAttempts && !selected) {
+      // Get current label at index
+      const currentLabel = labels[this.currentLabelIndex % labels.length];
+
+      // Move to next index for next call
+      this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
+      attempts++;
+
+      // Check if it's a multi-word label
+      if (!currentLabel.includes(' ')) {
+        continue; // Skip single-word labels
+      }
+
+      // Check if this label can be used based on no_duplicates rules
+      if (!this.canUseLabel(currentLabel)) {
+        continue; // Skip this label, try next
+      }
+
+      // Check if this label is in recent labels
+      if (this.recentLabels.includes(currentLabel) && multiWordLabels.length > 1) {
+        continue; // Skip recent label if we have more options
+      }
+
+      // Valid multi-word label found
+      selected = currentLabel;
+      foundWithoutReset = true;
     }
 
-    // Filter out recent labels to ensure minimum gap
-    if (this.recentLabels.length > 0 && multiWordLabels.length > 1) {
-      const filtered = multiWordLabels.filter(label => !this.recentLabels.includes(label));
-      if (filtered.length > 0) {
-        multiWordLabels = filtered;
+    // If no valid multi-word label found after cycling, try resetting and searching again
+    if (!selected && this.noDuplicates.length > 0) {
+      console.log('No valid multi-word labels found, resetting no_duplicates cycle');
+      this.checkAndResetNoDuplicatesCycle();
+
+      // Try again after reset
+      for (let i = 0; i < labels.length && !selected; i++) {
+        const currentLabel = labels[this.currentLabelIndex % labels.length];
+        this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
+
+        if (currentLabel.includes(' ') && this.canUseLabel(currentLabel)) {
+          selected = currentLabel;
+          break;
+        }
       }
     }
 
-    // Select random multi-word label
-    const selected = multiWordLabels[Math.floor(Math.random() * multiWordLabels.length)];
+    // If still no valid label, use first available
+    if (!selected) {
+      const availableByNoDuplicates = multiWordLabels.filter(label => this.canUseLabel(label));
+      selected = availableByNoDuplicates.length > 0
+        ? availableByNoDuplicates[0]
+        : multiWordLabels[0];
+    }
+
     const words = selected.split(' ');
 
     // Mark as used for no_duplicates tracking
@@ -331,52 +448,79 @@ export class ShapeManager {
   }
 
   /**
-   * Get next label yang tidak ada di recentLabels
-   * Mencegah label yang sama muncul dalam LABEL_GAP tetromino terakhir
+   * Get next label secara sequential/urutan
+   * Cycle through labels in order, respecting no_duplicates rules
    */
   private getNextLabelFromArray(labels: string[]): string {
     if (labels.length === 0) {
       return 'Label';
     }
 
-    // Filter out labels that can't be used based on no_duplicates rules
-    let availableLabels = labels.filter(label => this.canUseLabel(label));
+    // Try to find next valid label starting from current index
+    let attempts = 0;
+    const maxAttempts = labels.length * 2; // Prevent infinite loop
+    let foundWithoutReset = false;
 
-    // If no labels available due to no_duplicates, use all labels (fallback)
-    if (availableLabels.length === 0) {
-      availableLabels = labels;
+    while (attempts < maxAttempts) {
+      // Get current label at index (with cycling)
+      const currentLabel = labels[this.currentLabelIndex % labels.length];
+
+      // Move to next index for next call
+      this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
+      attempts++;
+
+      // Check if this label can be used based on no_duplicates rules
+      if (!this.canUseLabel(currentLabel)) {
+        continue; // Skip this label, try next
+      }
+
+      // Check if this label is in recent labels (optional: can be removed if not needed)
+      if (this.recentLabels.includes(currentLabel) && labels.length > this.LABEL_GAP) {
+        continue; // Skip recent label if we have enough labels
+      }
+
+      // Label is valid, use it
+      foundWithoutReset = true;
+      this.markLabelAsUsed(currentLabel);
+
+      // Add to recent labels and maintain max size of LABEL_GAP
+      this.recentLabels.push(currentLabel);
+      if (this.recentLabels.length > this.LABEL_GAP) {
+        this.recentLabels.shift(); // Remove oldest label
+      }
+
+      return currentLabel;
     }
 
-    // Filter out recent labels to ensure minimum gap
-    if (this.recentLabels.length > 0 && availableLabels.length > this.recentLabels.length) {
-      const filtered = availableLabels.filter(label => !this.recentLabels.includes(label));
-      if (filtered.length > 0) {
-        availableLabels = filtered;
+    // If no valid label found after full cycle, reset no_duplicates and try again
+    if (!foundWithoutReset && this.noDuplicates.length > 0) {
+      console.log('No valid labels found, resetting no_duplicates cycle');
+      this.checkAndResetNoDuplicatesCycle();
+
+      // Try one more time after reset
+      for (let i = 0; i < labels.length; i++) {
+        const currentLabel = labels[this.currentLabelIndex % labels.length];
+        this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
+
+        if (this.canUseLabel(currentLabel)) {
+          this.markLabelAsUsed(currentLabel);
+          this.recentLabels.push(currentLabel);
+          if (this.recentLabels.length > this.LABEL_GAP) {
+            this.recentLabels.shift();
+          }
+          return currentLabel;
+        }
       }
     }
 
-    // If all labels are recent, reset to labels filtered by no_duplicates only
-    if (availableLabels.length === 0) {
-      availableLabels = labels.filter(label => this.canUseLabel(label));
-      if (availableLabels.length === 0) {
-        availableLabels = labels; // Ultimate fallback
-      }
-    }
-
-    // Select random label from available
-    const randomIndex = Math.floor(Math.random() * availableLabels.length);
-    const selectedLabel = availableLabels[randomIndex];
-
-    // Mark as used for no_duplicates tracking
-    this.markLabelAsUsed(selectedLabel);
-
-    // Add to recent labels and maintain max size of LABEL_GAP
-    this.recentLabels.push(selectedLabel);
+    // Fallback: if still no valid label found, return first label
+    const fallbackLabel = labels[0];
+    this.markLabelAsUsed(fallbackLabel);
+    this.recentLabels.push(fallbackLabel);
     if (this.recentLabels.length > this.LABEL_GAP) {
-      this.recentLabels.shift(); // Remove oldest label
+      this.recentLabels.shift();
     }
-
-    return selectedLabel;
+    return fallbackLabel;
   }
 
   /**

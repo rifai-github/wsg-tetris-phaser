@@ -669,7 +669,7 @@ export class TetrisScene extends Phaser.Scene {
 
     let currentX = startX;
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 4; i++) {
       if (this.nextTetrominos[i]) {
         // First shape (index 0) uses color, others use outline
         const useColor = i === 0;
@@ -686,7 +686,7 @@ export class TetrisScene extends Phaser.Scene {
         // Calculate spacing based on current shape width + next shape width
         const currentShapeWidth = this.nextTetrominos[i].matrix[0].length * this.config.tileSize * scale;
 
-        if (i < 6 && this.nextTetrominos[i + 1]) {
+        if (i < 3 && this.nextTetrominos[i + 1]) {
           const nextShapeWidth = this.nextTetrominos[i + 1].matrix[0].length * this.config.tileSize * scale;
           // Move left by half of current width + spacing + half of next width
           currentX -= (currentShapeWidth / 2) + baseSpacing + (nextShapeWidth / 2);

@@ -73,7 +73,7 @@ Customize gameplay via query parameters:
 - `?type=<mode>`: Select gameplay mode (explorer, builder, adapter, innovator)
 - `?timer=<seconds>`: Set custom countdown duration (default: 60)
 - `?username=<name>`: Display custom username in profile section
-- `?suggested_skills=<JSON_array>`: Custom skills labels (URL-encoded JSON array). Labels assigned sequentially and cycle through all skills. Falls back to `label_block.json` if not provided.
+- `?suggested_skills=<JSON_array>`: Custom skills labels (URL-encoded JSON array). Array is shuffled once at game start for variety, then labels are used sequentially in the shuffled order and cycle back to the start when reaching the end. Falls back to `label_block.json` if not provided.
 - `?no_duplicates=<JSON_array>`: Skills that can only appear once per cycle (URL-encoded JSON array). When all no_duplicates labels are used, the cycle resets and they become available again.
 
 Example: `game.html?type=adapter&timer=15&username=John&suggested_skills=%5B%22Agile%22%2C%22Adaptable%22%5D&no_duplicates=%5B%22Adaptable%22%5D`
