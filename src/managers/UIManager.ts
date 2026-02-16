@@ -245,7 +245,7 @@ export class UIManager {
     const instructionText1 = this.scene.add.text(
       centerX - 20,
       instructionY + paddingY,
-      'Organise the blocks and fill the gaps',
+      'Organise the blocks.',
       {
         fontFamily: GAME_CONSTANTS.FONT_FAMILY,
         fontSize: Math.floor(16 * GAME_CONSTANTS.SCALE_FACTOR) + 'px',
