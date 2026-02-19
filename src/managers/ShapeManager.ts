@@ -11,12 +11,19 @@ export class ShapeManager {
   private suggestedSkills: string[] = [];
   private noDuplicates: string[] = [];
 
-  // Track current index for sequential label selection
-  private currentLabelIndex: number = 0;
+  // Queue-based label tracking: tracks which indices have been consumed
+  // Only resets when ALL labels have been used (true queue behavior)
+  private consumedIndices: Set<number> = new Set();
+  private nextSearchIndex: number = 0;
+  private activeLabelsRef: string[] | null = null; // Detects when labels array changes
 
   // Track used labels from noDuplicates list
-  // When all noDuplicates labels are used, reset the set to allow cycle repeat
   private usedNoDuplicates: Set<string> = new Set();
+
+  // Track no_duplicates labels that were SKIPPED (virtually consumed) in the current queue cycle.
+  // When the queue cycle completes, only these labels get unblocked — not ones that were
+  // actually used. This decouples the no_duplicates cycle from the label queue cycle.
+  private virtuallyConsumedNoDuplicates: Set<string> = new Set();
 
   // Track recent shape groups to prevent duplicates within gap
   // Shape groups: S/Z are treated as same, L/J are treated as same
@@ -84,7 +91,10 @@ export class ShapeManager {
     this.recentLabels = [];
     this.usedLabels.clear();
     this.usedNoDuplicates.clear();
-    this.currentLabelIndex = 0;
+    this.consumedIndices.clear();
+    this.nextSearchIndex = 0;
+    this.activeLabelsRef = null;
+    this.virtuallyConsumedNoDuplicates.clear();
   }
 
   /**
@@ -121,22 +131,6 @@ export class ShapeManager {
   }
 
   /**
-   * Check and reset no_duplicates cycle if all labels have been used
-   * Should be called at the start of label selection
-   */
-  private checkAndResetNoDuplicatesCycle(): void {
-    if (this.noDuplicates.length === 0) {
-      return;
-    }
-
-    // Reset cycle if all no_duplicates labels have been used
-    if (this.usedNoDuplicates.size >= this.noDuplicates.length) {
-      console.log('All no_duplicates labels used, resetting cycle');
-      this.usedNoDuplicates.clear();
-    }
-  }
-
-  /**
    * Mark label as used (for no_duplicates tracking)
    */
   private markLabelAsUsed(label: string): void {
@@ -157,12 +151,16 @@ export class ShapeManager {
       availableLabels = this.suggestedSkills;
     }
 
-    // Filter to only multi-word labels
-    const multiWordLabels = availableLabels.filter(label => label.includes(' '));
+    // If all labels consumed, the cycle will reset on next call — treat as available
+    if (this.consumedIndices.size >= availableLabels.length) {
+      return availableLabels.some(label => label.includes(' '));
+    }
 
-    // Check if any multi-word label can be used (not blocked by no_duplicates)
-    for (const label of multiWordLabels) {
-      if (this.canUseLabel(label)) {
+    // Check if any unconsumed multi-word label can be used
+    for (let i = 0; i < availableLabels.length; i++) {
+      if (this.consumedIndices.has(i)) continue;
+      const label = availableLabels[i];
+      if (label.includes(' ') && this.canUseLabel(label)) {
         return true;
       }
     }
@@ -311,6 +309,32 @@ export class ShapeManager {
   }
 
   /**
+   * Initialize/reset the queue if the labels array changed or all labels are consumed.
+   * This ensures true queue behavior: a label is only reused after all others are used.
+   */
+  private initQueueIfNeeded(labels: string[]): void {
+    // If the labels array reference changed, reset all tracking
+    if (this.activeLabelsRef !== labels) {
+      this.consumedIndices.clear();
+      this.nextSearchIndex = 0;
+      this.activeLabelsRef = labels;
+      this.virtuallyConsumedNoDuplicates.clear();
+    }
+    // Reset cycle only when ALL labels have been consumed (real + virtual)
+    if (this.consumedIndices.size >= labels.length) {
+      console.log(`All ${labels.length} labels consumed, resetting queue cycle`);
+      // Only unblock no_duplicates that were SKIPPED (virtually consumed) this cycle.
+      // Labels that were actually used remain blocked until THEY are virtually consumed
+      // in the next cycle — this keeps the no_duplicates cycle independent.
+      for (const label of this.virtuallyConsumedNoDuplicates) {
+        this.usedNoDuplicates.delete(label);
+      }
+      this.virtuallyConsumedNoDuplicates.clear();
+      this.consumedIndices.clear();
+    }
+  }
+
+  /**
    * Get labels untuk shape berdasarkan jumlah text_position
    * Prioritas: suggested_skills dari URL parameter > shape.label dari JSON
    */
@@ -367,84 +391,65 @@ export class ShapeManager {
       return null;
     }
 
-    // Try to find next valid multi-word label starting from current index
-    let attempts = 0;
-    const maxAttempts = labels.length * 2;
+    this.initQueueIfNeeded(labels);
+
+    // Count unconsumed multi-word labels available (for recentLabels check)
+    let unconsumedMultiWordCount = 0;
+    for (let i = 0; i < labels.length; i++) {
+      if (!this.consumedIndices.has(i) && labels[i].includes(' ') && this.canUseLabel(labels[i])) {
+        unconsumedMultiWordCount++;
+      }
+    }
+
+    // Search forward from nextSearchIndex for the next valid multi-word label.
+    // - Single-word labels: SKIPPED but NOT consumed (stay in queue for getNextLabelFromArray)
+    // - Blocked multi-word no_duplicates: VIRTUALLY consumed (same principle as getNextLabelFromArray)
     let selected: string | null = null;
-    let foundWithoutReset = false;
+    let selectedIdx = -1;
 
-    while (attempts < maxAttempts && !selected) {
-      // Get current label at index
-      const currentLabel = labels[this.currentLabelIndex % labels.length];
+    for (let i = 0; i < labels.length; i++) {
+      const idx = (this.nextSearchIndex + i) % labels.length;
 
-      // Move to next index for next call
-      this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
-      attempts++;
+      if (this.consumedIndices.has(idx)) continue;
 
-      // Check if it's a multi-word label
-      if (!currentLabel.includes(' ')) {
-        continue; // Skip single-word labels
-      }
+      const label = labels[idx];
 
-      // Check if this label can be used based on no_duplicates rules
-      if (!this.canUseLabel(currentLabel)) {
-        continue; // Skip this label, try next
-      }
+      if (!label.includes(' ')) continue; // skip single-word, do NOT consume
 
-      // Check if this label is in recent labels
-      if (this.recentLabels.includes(currentLabel) && multiWordLabels.length > 1) {
-        continue; // Skip recent label if we have more options
-      }
-
-      // Valid multi-word label found
-      selected = currentLabel;
-      foundWithoutReset = true;
-    }
-
-    // If no valid multi-word label found after cycling, try resetting and searching again
-    if (!selected && this.noDuplicates.length > 0) {
-      console.log('No valid multi-word labels found, resetting no_duplicates cycle');
-      this.checkAndResetNoDuplicatesCycle();
-
-      // Try again after reset
-      for (let i = 0; i < labels.length && !selected; i++) {
-        const currentLabel = labels[this.currentLabelIndex % labels.length];
-        this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
-
-        if (currentLabel.includes(' ') && this.canUseLabel(currentLabel)) {
-          selected = currentLabel;
-          break;
+      if (!this.canUseLabel(label)) {
+        // Virtually consume blocked multi-word no_duplicate
+        if (this.noDuplicates.includes(label)) {
+          this.consumedIndices.add(idx);
+          this.virtuallyConsumedNoDuplicates.add(label);
         }
+        continue;
       }
+
+      if (this.recentLabels.includes(label) && unconsumedMultiWordCount > 1) continue;
+
+      selected = label;
+      selectedIdx = idx;
+      break;
     }
 
-    // If still no valid label, use first available
-    if (!selected) {
-      const availableByNoDuplicates = multiWordLabels.filter(label => this.canUseLabel(label));
-      selected = availableByNoDuplicates.length > 0
-        ? availableByNoDuplicates[0]
-        : multiWordLabels[0];
-    }
+    // No valid multi-word label found — return null and let caller fall back to single-word labels
+    if (!selected || selectedIdx === -1) return null;
 
-    const words = selected.split(' ');
+    // Consume ONLY the selected multi-word label
+    this.consumedIndices.add(selectedIdx);
+    this.nextSearchIndex = (selectedIdx + 1) % labels.length;
 
-    // Mark as used for no_duplicates tracking
     this.markLabelAsUsed(selected);
-
-    // Add to recent labels and maintain max size of LABEL_GAP
     this.recentLabels.push(selected);
     if (this.recentLabels.length > this.LABEL_GAP) {
-      this.recentLabels.shift(); // Remove oldest label
+      this.recentLabels.shift();
     }
 
     // Hitung titik tengah untuk pembagian seimbang
+    const words = selected.split(' ');
     const midPoint = Math.ceil(words.length / 2);
 
-    // Bagi menjadi 2 label
-    const label1 = words.slice(0, midPoint).join(' ');
-    const label2 = words.slice(midPoint).join(' ');
-
-    return [label1, label2];
+    return [words.slice(0, midPoint).join(' '), words.slice(midPoint).join(' ')];
   }
 
   /**
@@ -456,71 +461,69 @@ export class ShapeManager {
       return 'Label';
     }
 
-    // Try to find next valid label starting from current index
-    let attempts = 0;
-    const maxAttempts = labels.length * 2; // Prevent infinite loop
-    let foundWithoutReset = false;
+    this.initQueueIfNeeded(labels);
 
-    while (attempts < maxAttempts) {
-      // Get current label at index (with cycling)
-      const currentLabel = labels[this.currentLabelIndex % labels.length];
+    const totalUnconsumed = labels.length - this.consumedIndices.size;
 
-      // Move to next index for next call
-      this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
-      attempts++;
+    // Search forward from nextSearchIndex for the next unconsumed, valid label.
+    // Blocked no_duplicates are "virtually consumed": added to consumedIndices but not
+    // returned. This lets the queue cycle complete naturally so the next cycle can
+    // unblock them — keeping the no_duplicates rhythm independent from the label queue.
+    for (let i = 0; i < labels.length; i++) {
+      const idx = (this.nextSearchIndex + i) % labels.length;
 
-      // Check if this label can be used based on no_duplicates rules
-      if (!this.canUseLabel(currentLabel)) {
-        continue; // Skip this label, try next
-      }
+      if (this.consumedIndices.has(idx)) continue;
 
-      // Check if this label is in recent labels (optional: can be removed if not needed)
-      if (this.recentLabels.includes(currentLabel) && labels.length > this.LABEL_GAP) {
-        continue; // Skip recent label if we have enough labels
-      }
+      const label = labels[idx];
 
-      // Label is valid, use it
-      foundWithoutReset = true;
-      this.markLabelAsUsed(currentLabel);
-
-      // Add to recent labels and maintain max size of LABEL_GAP
-      this.recentLabels.push(currentLabel);
-      if (this.recentLabels.length > this.LABEL_GAP) {
-        this.recentLabels.shift(); // Remove oldest label
-      }
-
-      return currentLabel;
-    }
-
-    // If no valid label found after full cycle, reset no_duplicates and try again
-    if (!foundWithoutReset && this.noDuplicates.length > 0) {
-      console.log('No valid labels found, resetting no_duplicates cycle');
-      this.checkAndResetNoDuplicatesCycle();
-
-      // Try one more time after reset
-      for (let i = 0; i < labels.length; i++) {
-        const currentLabel = labels[this.currentLabelIndex % labels.length];
-        this.currentLabelIndex = (this.currentLabelIndex + 1) % labels.length;
-
-        if (this.canUseLabel(currentLabel)) {
-          this.markLabelAsUsed(currentLabel);
-          this.recentLabels.push(currentLabel);
-          if (this.recentLabels.length > this.LABEL_GAP) {
-            this.recentLabels.shift();
-          }
-          return currentLabel;
+      if (!this.canUseLabel(label)) {
+        // Virtually consume blocked no_duplicate so the queue position is not wasted
+        if (this.noDuplicates.includes(label)) {
+          this.consumedIndices.add(idx);
+          this.virtuallyConsumedNoDuplicates.add(label);
         }
+        continue;
+      }
+
+      const effectiveUnconsumed = totalUnconsumed - this.virtuallyConsumedNoDuplicates.size;
+      if (this.recentLabels.includes(label) && effectiveUnconsumed > this.LABEL_GAP) continue;
+
+      // Found a valid label — consume it
+      this.consumedIndices.add(idx);
+      this.nextSearchIndex = (idx + 1) % labels.length;
+
+      this.markLabelAsUsed(label);
+      this.recentLabels.push(label);
+      if (this.recentLabels.length > this.LABEL_GAP) {
+        this.recentLabels.shift();
+      }
+
+      return label;
+    }
+
+    // All remaining labels are virtually consumed — trigger inline reset and retry once
+    if (this.consumedIndices.size >= labels.length) {
+      for (const label of this.virtuallyConsumedNoDuplicates) {
+        this.usedNoDuplicates.delete(label);
+      }
+      this.virtuallyConsumedNoDuplicates.clear();
+      this.consumedIndices.clear();
+
+      for (let i = 0; i < labels.length; i++) {
+        const idx = (this.nextSearchIndex + i) % labels.length;
+        const label = labels[idx];
+        if (!this.canUseLabel(label)) continue;
+
+        this.consumedIndices.add(idx);
+        this.nextSearchIndex = (idx + 1) % labels.length;
+        this.markLabelAsUsed(label);
+        this.recentLabels.push(label);
+        if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
+        return label;
       }
     }
 
-    // Fallback: if still no valid label found, return first label
-    const fallbackLabel = labels[0];
-    this.markLabelAsUsed(fallbackLabel);
-    this.recentLabels.push(fallbackLabel);
-    if (this.recentLabels.length > this.LABEL_GAP) {
-      this.recentLabels.shift();
-    }
-    return fallbackLabel;
+    return labels[0];
   }
 
   /**
