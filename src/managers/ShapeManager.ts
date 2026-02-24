@@ -309,6 +309,26 @@ export class ShapeManager {
   }
 
   /**
+   * Generate random shape with rotation for switch (tanpa consume label)
+   * Hanya return shape, rotation, dan matrix — label tidak di-generate
+   * Ini mencegah label queue ter-consume sia-sia saat switch mencoba banyak shape
+   */
+  generateRandomShapeForSwitch(): { shape: ShapeData; rotation: number; matrix: number[][] } {
+    const randomShape = this.getRandomShapeForSwitch();
+
+    const rotations = [0, 90, 180, 270];
+    const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
+    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+
+    let matrix = this.cloneMatrix(randomShape.matrix);
+    for (let i = 0; i < (finalRotation / 90); i++) {
+      matrix = this.rotateMatrix(matrix);
+    }
+
+    return { shape: randomShape, rotation: finalRotation, matrix };
+  }
+
+  /**
    * Initialize/reset the queue if the labels array changed or all labels are consumed.
    * This ensures true queue behavior: a label is only reused after all others are used.
    */

@@ -977,16 +977,15 @@ export class TetrisScene extends Phaser.Scene {
     let validShapeFound = false;
 
     for (let attempt = 0; attempt < maxAttempts && !validShapeFound; attempt++) {
-      // Generate a random tetromino dengan random rotation (termasuk S dan Z untuk switch)
-      const randomTetromino = this.shapeManager.generateRandomTetrominoForSwitch();
+      // Generate random shape + rotation tanpa consume label dari queue
+      const randomShape = this.shapeManager.generateRandomShapeForSwitch();
 
-      // Gunakan rotation yang sudah di-random dari generateRandomTetrominoForSwitch()
       const testTetromino = {
-        shape: randomTetromino.shape,
+        shape: randomShape.shape,
         x: currentX,
         y: currentY,
-        rotation: randomTetromino.rotation,
-        matrix: randomTetromino.matrix,
+        rotation: randomShape.rotation,
+        matrix: randomShape.matrix,
         labels: currentLabels // Gunakan label dari tetromino yang sedang aktif
       };
 
