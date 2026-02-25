@@ -1045,8 +1045,10 @@ export class TetrisScene extends Phaser.Scene {
   private gameOver(): void {
     this.isGameActive = false;
 
-    // Capture screenshot of play area and send to parent iframe
-    this.capturePlayAreaScreenshot();
+    // Delay sebelum capture screenshot agar semua render selesai
+    this.time.delayedCall(300, () => {
+      this.capturePlayAreaScreenshot();
+    });
 
     // Wait for parent to send restart message
     // No auto-restart
