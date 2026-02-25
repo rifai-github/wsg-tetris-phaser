@@ -951,6 +951,9 @@ export class TetrisScene extends Phaser.Scene {
   private skipCurrentBlock(): void {
     if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
+    // Return labels to pool (label bisa dipakai lagi karena tidak di-lock)
+    this.shapeManager.returnLabelsToPool(this.currentTetromino.labels);
+
     // Destroy current tetromino renderer
     this.tetrominoRenderer.destroy();
 
@@ -1019,6 +1022,9 @@ export class TetrisScene extends Phaser.Scene {
 
     // Lock ke board
     this.gameBoard.lockTetromino(this.currentTetromino);
+
+    // Mark labels as locked (tidak boleh muncul lagi sampai cycle reset)
+    this.shapeManager.markLabelsLocked(this.currentTetromino.labels);
 
     // Play block SFX when tetromino locks
     this.playBlockSFX();

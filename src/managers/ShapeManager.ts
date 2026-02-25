@@ -2,28 +2,28 @@ import { ShapeData, Tetromino } from '../types';
 
 /**
  * ShapeManager - Mengelola shape data, random generation, dan rotation logic
+ *
+ * Label tracking menggunakan lock-based system:
+ * - pendingLabels: label yang sudah di-assign ke tetromino di queue tapi belum di-lock
+ * - lockedLabels: label yang sudah ter-lock di board (tidak boleh muncul lagi sampai cycle reset)
+ * - Saat skip: label dikembalikan ke pool (hapus dari pendingLabels)
+ * - Saat lock: label dipindah dari pending ke locked
+ * - Cycle reset: saat semua label sudah locked, reset lockedLabels (kecuali no_duplicates)
  */
 export class ShapeManager {
   private shapeData: ShapeData[] = [];
   private labelData: string[] = [];
-  private usedLabels: Set<string> = new Set();
   private currentGameplayType: string = '';
   private suggestedSkills: string[] = [];
   private noDuplicates: string[] = [];
 
-  // Queue-based label tracking: tracks which indices have been consumed
-  // Only resets when ALL labels have been used (true queue behavior)
-  private consumedIndices: Set<number> = new Set();
-  private nextSearchIndex: number = 0;
-  private activeLabelsRef: string[] | null = null; // Detects when labels array changes
+  // Lock-based label tracking
+  private lockedLabels: Set<string> = new Set();   // Labels yang sudah ter-lock di board
+  private pendingLabels: Set<string> = new Set();   // Labels yang di-assign tapi belum di-lock
+  private nextSearchIndex: number = 0;              // Sequential scanning pointer
 
   // Track used labels from noDuplicates list
   private usedNoDuplicates: Set<string> = new Set();
-
-  // Track no_duplicates labels that were SKIPPED (virtually consumed) in the current queue cycle.
-  // When the queue cycle completes, only these labels get unblocked — not ones that were
-  // actually used. This decouples the no_duplicates cycle from the label queue cycle.
-  private virtuallyConsumedNoDuplicates: Set<string> = new Set();
 
   // Track recent shape groups to prevent duplicates within gap
   // Shape groups: S/Z are treated as same, L/J are treated as same
@@ -89,12 +89,37 @@ export class ShapeManager {
   reset(): void {
     this.recentShapeGroups = [];
     this.recentLabels = [];
-    this.usedLabels.clear();
     this.usedNoDuplicates.clear();
-    this.consumedIndices.clear();
+    this.lockedLabels.clear();
+    this.pendingLabels.clear();
     this.nextSearchIndex = 0;
-    this.activeLabelsRef = null;
-    this.virtuallyConsumedNoDuplicates.clear();
+  }
+
+  /**
+   * Mark labels as locked on board (dipanggil saat tetromino di-lock)
+   * Pindah dari pending ke locked, dan track no_duplicates
+   */
+  markLabelsLocked(labels: string[]): void {
+    for (const label of labels) {
+      this.pendingLabels.delete(label);
+      this.lockedLabels.add(label);
+      if (this.noDuplicates.includes(label)) {
+        this.usedNoDuplicates.add(label);
+        console.log(`Marked "${label}" as used no_duplicate (${this.usedNoDuplicates.size}/${this.noDuplicates.length})`);
+      }
+    }
+    console.log(`Labels locked: [${labels.join(', ')}] | Total locked: ${this.lockedLabels.size} | Pending: ${this.pendingLabels.size}`);
+  }
+
+  /**
+   * Return labels to pool (dipanggil saat tetromino di-skip)
+   * Hapus dari pending sehingga bisa di-assign lagi ke tetromino baru
+   */
+  returnLabelsToPool(labels: string[]): void {
+    for (const label of labels) {
+      this.pendingLabels.delete(label);
+    }
+    console.log(`Labels returned to pool: [${labels.join(', ')}] | Pending: ${this.pendingLabels.size}`);
   }
 
   /**
@@ -131,13 +156,40 @@ export class ShapeManager {
   }
 
   /**
-   * Mark label as used (for no_duplicates tracking)
+   * Check if a label is available for assignment
+   * Must not be locked, pending, or blocked by no_duplicates
    */
-  private markLabelAsUsed(label: string): void {
-    if (this.noDuplicates.includes(label)) {
-      this.usedNoDuplicates.add(label);
-      console.log(`Marked "${label}" as used (${this.usedNoDuplicates.size}/${this.noDuplicates.length})`);
+  private isLabelAvailable(label: string): boolean {
+    if (this.lockedLabels.has(label)) return false;
+    if (this.pendingLabels.has(label)) return false;
+    if (!this.canUseLabel(label)) return false;
+    return true;
+  }
+
+  /**
+   * Try to reset the cycle if all available labels are exhausted
+   * Reset lockedLabels saat semua label sudah locked, kecuali no_duplicates
+   */
+  private tryResetCycleIfNeeded(labels: string[]): boolean {
+    // Hitung berapa label yang masih available
+    const availableCount = labels.filter(label => this.isLabelAvailable(label)).length;
+
+    if (availableCount === 0 && this.lockedLabels.size > 0) {
+      console.log(`All labels exhausted (locked: ${this.lockedLabels.size}, pending: ${this.pendingLabels.size}), resetting cycle`);
+
+      // Clear locked labels sehingga bisa dipakai lagi
+      this.lockedLabels.clear();
+
+      // Reset no_duplicates jika semua sudah terpakai
+      if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
+        console.log('All no_duplicates used, resetting no_duplicates cycle');
+        this.usedNoDuplicates.clear();
+      }
+
+      return true; // Cycle was reset
     }
+
+    return false; // No reset needed
   }
 
   /**
@@ -151,18 +203,17 @@ export class ShapeManager {
       availableLabels = this.suggestedSkills;
     }
 
-    // If all labels consumed, the cycle will reset on next call — treat as available
-    if (this.consumedIndices.size >= availableLabels.length) {
-      return availableLabels.some(label => label.includes(' '));
-    }
+    // Check if any available multi-word label exists
+    // If cycle would reset, check if any multi-word label exists at all
+    const hasAvailableMultiWord = availableLabels.some(label =>
+      label.includes(' ') && this.isLabelAvailable(label)
+    );
 
-    // Check if any unconsumed multi-word label can be used
-    for (let i = 0; i < availableLabels.length; i++) {
-      if (this.consumedIndices.has(i)) continue;
-      const label = availableLabels[i];
-      if (label.includes(' ') && this.canUseLabel(label)) {
-        return true;
-      }
+    if (hasAvailableMultiWord) return true;
+
+    // If no available multi-word labels, check if a cycle reset would make one available
+    if (this.lockedLabels.size > 0) {
+      return availableLabels.some(label => label.includes(' '));
     }
 
     return false;
@@ -211,7 +262,6 @@ export class ShapeManager {
 
     // Apply rotation to matrix if needed
     let matrix = this.cloneMatrix(randomShape.matrix);
-    let currentRotation = finalRotation;
 
     // Rotate matrix to match the rotation angle
     for (let i = 0; i < (finalRotation / 90); i++) {
@@ -245,7 +295,6 @@ export class ShapeManager {
 
     // Apply rotation to matrix if needed
     let matrix = this.cloneMatrix(randomShape.matrix);
-    let currentRotation = finalRotation;
 
     // Rotate matrix to match the rotation angle
     for (let i = 0; i < (finalRotation / 90); i++) {
@@ -329,32 +378,6 @@ export class ShapeManager {
   }
 
   /**
-   * Initialize/reset the queue if the labels array changed or all labels are consumed.
-   * This ensures true queue behavior: a label is only reused after all others are used.
-   */
-  private initQueueIfNeeded(labels: string[]): void {
-    // If the labels array reference changed, reset all tracking
-    if (this.activeLabelsRef !== labels) {
-      this.consumedIndices.clear();
-      this.nextSearchIndex = 0;
-      this.activeLabelsRef = labels;
-      this.virtuallyConsumedNoDuplicates.clear();
-    }
-    // Reset cycle only when ALL labels have been consumed (real + virtual)
-    if (this.consumedIndices.size >= labels.length) {
-      console.log(`All ${labels.length} labels consumed, resetting queue cycle`);
-      // Only unblock no_duplicates that were SKIPPED (virtually consumed) this cycle.
-      // Labels that were actually used remain blocked until THEY are virtually consumed
-      // in the next cycle — this keeps the no_duplicates cycle independent.
-      for (const label of this.virtuallyConsumedNoDuplicates) {
-        this.usedNoDuplicates.delete(label);
-      }
-      this.virtuallyConsumedNoDuplicates.clear();
-      this.consumedIndices.clear();
-    }
-  }
-
-  /**
    * Get labels untuk shape berdasarkan jumlah text_position
    * Prioritas: suggested_skills dari URL parameter > shape.label dari JSON
    */
@@ -411,59 +434,49 @@ export class ShapeManager {
       return null;
     }
 
-    this.initQueueIfNeeded(labels);
+    // Try cycle reset if needed
+    this.tryResetCycleIfNeeded(labels);
 
-    // Count unconsumed multi-word labels available (for recentLabels check)
-    let unconsumedMultiWordCount = 0;
-    for (let i = 0; i < labels.length; i++) {
-      if (!this.consumedIndices.has(i) && labels[i].includes(' ') && this.canUseLabel(labels[i])) {
-        unconsumedMultiWordCount++;
+    // Count available multi-word labels (for recentLabels check)
+    let availableMultiWordCount = 0;
+    for (const label of labels) {
+      if (label.includes(' ') && this.isLabelAvailable(label)) {
+        availableMultiWordCount++;
       }
     }
 
     // Search forward from nextSearchIndex for the next valid multi-word label.
-    // - Single-word labels: SKIPPED but NOT consumed (stay in queue for getNextLabelFromArray)
-    // - Blocked multi-word no_duplicates: VIRTUALLY consumed (same principle as getNextLabelFromArray)
+    // - Single-word labels: SKIPPED (stay available for getNextLabelFromArray)
+    // - Blocked labels: SKIPPED
     let selected: string | null = null;
-    let selectedIdx = -1;
 
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
-
-      if (this.consumedIndices.has(idx)) continue;
-
       const label = labels[idx];
 
-      if (!label.includes(' ')) continue; // skip single-word, do NOT consume
+      if (!label.includes(' ')) continue; // skip single-word
 
-      if (!this.canUseLabel(label)) {
-        // Virtually consume blocked multi-word no_duplicate
-        if (this.noDuplicates.includes(label)) {
-          this.consumedIndices.add(idx);
-          this.virtuallyConsumedNoDuplicates.add(label);
-        }
-        continue;
-      }
+      if (!this.isLabelAvailable(label)) continue; // skip locked/pending/blocked
 
-      if (this.recentLabels.includes(label) && unconsumedMultiWordCount > 1) continue;
+      if (this.recentLabels.includes(label) && availableMultiWordCount > 1) continue;
 
       selected = label;
-      selectedIdx = idx;
+      this.nextSearchIndex = (idx + 1) % labels.length;
       break;
     }
 
-    // No valid multi-word label found — return null and let caller fall back to single-word labels
-    if (!selected || selectedIdx === -1) return null;
+    // No valid multi-word label found
+    if (!selected) return null;
 
-    // Consume ONLY the selected multi-word label
-    this.consumedIndices.add(selectedIdx);
-    this.nextSearchIndex = (selectedIdx + 1) % labels.length;
+    // Mark as pending (akan di-lock saat tetromino di-lock ke board)
+    this.pendingLabels.add(selected);
 
-    this.markLabelAsUsed(selected);
     this.recentLabels.push(selected);
     if (this.recentLabels.length > this.LABEL_GAP) {
       this.recentLabels.shift();
     }
+
+    console.log(`Two-word label assigned: "${selected}" | Pending: ${this.pendingLabels.size} | Locked: ${this.lockedLabels.size}`);
 
     // Hitung titik tengah untuk pembagian seimbang
     const words = selected.split(' ');
@@ -474,69 +487,57 @@ export class ShapeManager {
 
   /**
    * Get next label secara sequential/urutan
-   * Cycle through labels in order, respecting no_duplicates rules
+   * Cycle through labels in order, respecting lock-based tracking dan no_duplicates rules
    */
   private getNextLabelFromArray(labels: string[]): string {
     if (labels.length === 0) {
       return 'Label';
     }
 
-    this.initQueueIfNeeded(labels);
+    // Try cycle reset if needed
+    this.tryResetCycleIfNeeded(labels);
 
-    const totalUnconsumed = labels.length - this.consumedIndices.size;
+    // Count available labels (for recentLabels check)
+    const availableCount = labels.filter(label => this.isLabelAvailable(label)).length;
 
-    // Search forward from nextSearchIndex for the next unconsumed, valid label.
-    // Blocked no_duplicates are "virtually consumed": added to consumedIndices but not
-    // returned. This lets the queue cycle complete naturally so the next cycle can
-    // unblock them — keeping the no_duplicates rhythm independent from the label queue.
+    // Search forward from nextSearchIndex for the next available label
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
-
-      if (this.consumedIndices.has(idx)) continue;
-
       const label = labels[idx];
 
-      if (!this.canUseLabel(label)) {
-        // Virtually consume blocked no_duplicate so the queue position is not wasted
-        if (this.noDuplicates.includes(label)) {
-          this.consumedIndices.add(idx);
-          this.virtuallyConsumedNoDuplicates.add(label);
-        }
-        continue;
-      }
+      if (!this.isLabelAvailable(label)) continue;
 
-      const effectiveUnconsumed = totalUnconsumed - this.virtuallyConsumedNoDuplicates.size;
-      if (this.recentLabels.includes(label) && effectiveUnconsumed > this.LABEL_GAP) continue;
+      if (this.recentLabels.includes(label) && availableCount > this.LABEL_GAP) continue;
 
-      // Found a valid label — consume it
-      this.consumedIndices.add(idx);
+      // Found a valid label — mark as pending
+      this.pendingLabels.add(label);
       this.nextSearchIndex = (idx + 1) % labels.length;
 
-      this.markLabelAsUsed(label);
       this.recentLabels.push(label);
       if (this.recentLabels.length > this.LABEL_GAP) {
         this.recentLabels.shift();
       }
 
+      console.log(`Label assigned: "${label}" | Pending: ${this.pendingLabels.size} | Locked: ${this.lockedLabels.size}`);
       return label;
     }
 
-    // All remaining labels are virtually consumed — trigger inline reset and retry once
-    if (this.consumedIndices.size >= labels.length) {
-      for (const label of this.virtuallyConsumedNoDuplicates) {
-        this.usedNoDuplicates.delete(label);
+    // All labels exhausted — force cycle reset and retry once
+    if (this.lockedLabels.size > 0) {
+      console.log('Force cycle reset — all labels locked/pending/blocked');
+      this.lockedLabels.clear();
+
+      if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
+        this.usedNoDuplicates.clear();
       }
-      this.virtuallyConsumedNoDuplicates.clear();
-      this.consumedIndices.clear();
 
       for (let i = 0; i < labels.length; i++) {
         const idx = (this.nextSearchIndex + i) % labels.length;
         const label = labels[idx];
-        if (!this.canUseLabel(label)) continue;
+        if (!this.isLabelAvailable(label)) continue;
 
-        this.consumedIndices.add(idx);
+        this.pendingLabels.add(label);
         this.nextSearchIndex = (idx + 1) % labels.length;
-        this.markLabelAsUsed(label);
         this.recentLabels.push(label);
         if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
         return label;
