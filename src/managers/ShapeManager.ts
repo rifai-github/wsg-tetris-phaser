@@ -3,12 +3,15 @@ import { ShapeData, Tetromino } from '../types';
 /**
  * ShapeManager - Mengelola shape data, random generation, dan rotation logic
  *
- * Label tracking menggunakan lock-based system:
- * - pendingLabels: label yang sudah di-assign ke tetromino di queue tapi belum di-lock
- * - lockedLabels: label yang sudah ter-lock di board (tidak boleh muncul lagi sampai cycle reset)
- * - Saat skip: label dikembalikan ke pool (hapus dari pendingLabels)
- * - Saat lock: label dipindah dari pending ke locked
- * - Cycle reset: saat semua label sudah locked, reset lockedLabels (kecuali no_duplicates)
+ * Label tracking system:
+ * - usedLabels: SEMUA label yang pernah di-assign ke tetromino di cycle ini (tidak pernah dihapus sampai cycle reset)
+ * - lockedLabels: label yang sudah ter-lock di board (untuk no_duplicates tracking)
+ * - pendingLabels: label yang di-assign tapi belum di-lock (untuk tracking queue)
+ *
+ * Rule:
+ * - Sekali label di-assign (tampil di tetromino), TIDAK boleh muncul lagi sampai cycle reset
+ * - Skip TIDAK mengembalikan label — label tetap "used"
+ * - Cycle reset saat semua label sudah used, clear semua kecuali no_duplicates
  */
 export class ShapeManager {
   private shapeData: ShapeData[] = [];
@@ -17,47 +20,34 @@ export class ShapeManager {
   private suggestedSkills: string[] = [];
   private noDuplicates: string[] = [];
 
-  // Lock-based label tracking
-  private lockedLabels: Set<string> = new Set();   // Labels yang sudah ter-lock di board
-  private pendingLabels: Set<string> = new Set();   // Labels yang di-assign tapi belum di-lock
-  private nextSearchIndex: number = 0;              // Sequential scanning pointer
+  // Label tracking
+  private usedLabels: Set<string> = new Set();      // Semua label yang pernah di-assign (never removed until cycle reset)
+  private lockedLabels: Set<string> = new Set();     // Labels yang ter-lock di board
+  private pendingLabels: Set<string> = new Set();    // Labels di queue/active belum di-lock
+  private nextSearchIndex: number = 0;               // Sequential scanning pointer
 
   // Track used labels from noDuplicates list
   private usedNoDuplicates: Set<string> = new Set();
 
   // Track recent shape groups to prevent duplicates within gap
-  // Shape groups: S/Z are treated as same, L/J are treated as same
-  // If L is spawned, neither L nor J will appear for at least SHAPE_GAP tetrominos
   private recentShapeGroups: string[] = [];
-  private readonly SHAPE_GAP: number = 3; // Minimum gap before same shape group can appear again
+  private readonly SHAPE_GAP: number = 3;
 
   // Track recent labels to prevent duplicates within gap
-  // If label "Agile" is used, it won't appear again for at least LABEL_GAP tetromino
   private recentLabels: string[] = [];
-  private readonly LABEL_GAP: number = 4; // Minimum gap before same label can appear again
+  private readonly LABEL_GAP: number = 4;
 
   constructor() {}
 
-  /**
-   * Set current gameplay type (untuk filter shape tertentu)
-   */
   setGameplayType(type: string): void {
     this.currentGameplayType = type;
   }
 
-  /**
-   * Set suggested skills from URL parameter
-   * Shuffles the array first for variety, then uses sequentially
-   */
   setSuggestedSkills(skills: string[]): void {
-    // Shuffle the array for variety between game sessions
     this.suggestedSkills = this.shuffleArray([...skills]);
     console.log('Shuffled suggested skills:', this.suggestedSkills);
   }
 
-  /**
-   * Shuffle array using Fisher-Yates algorithm
-   */
   private shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -67,12 +57,7 @@ export class ShapeManager {
     return shuffled;
   }
 
-  /**
-   * Set no duplicates list from URL parameter
-   * Filters to only include labels that are actually in suggested_skills
-   */
   setNoDuplicates(noDuplicates: string[]): void {
-    // Only keep no_duplicates items that exist in suggested_skills
     if (this.suggestedSkills.length > 0) {
       this.noDuplicates = noDuplicates.filter(label =>
         this.suggestedSkills.includes(label)
@@ -83,12 +68,10 @@ export class ShapeManager {
     }
   }
 
-  /**
-   * Reset state untuk game baru
-   */
   reset(): void {
     this.recentShapeGroups = [];
     this.recentLabels = [];
+    this.usedLabels.clear();
     this.usedNoDuplicates.clear();
     this.lockedLabels.clear();
     this.pendingLabels.clear();
@@ -96,11 +79,36 @@ export class ShapeManager {
   }
 
   /**
+   * Resolve split label (S/Z shapes) ke label asli di suggestedSkills.
+   * "Growth" atau "Mindset" → "Growth Mindset"
+   */
+  private resolveOriginalLabel(label: string): string {
+    if (this.suggestedSkills.includes(label)) {
+      return label;
+    }
+    for (const skill of this.suggestedSkills) {
+      if (!skill.includes(' ')) continue;
+      const words = skill.split(' ');
+      const midPoint = Math.ceil(words.length / 2);
+      const part1 = words.slice(0, midPoint).join(' ');
+      const part2 = words.slice(midPoint).join(' ');
+      if (label === part1 || label === part2) {
+        return skill;
+      }
+    }
+    return label;
+  }
+
+  /**
    * Mark labels as locked on board (dipanggil saat tetromino di-lock)
-   * Pindah dari pending ke locked, dan track no_duplicates
    */
   markLabelsLocked(labels: string[]): void {
+    const originalLabels = new Set<string>();
     for (const label of labels) {
+      originalLabels.add(this.resolveOriginalLabel(label));
+    }
+
+    for (const label of originalLabels) {
       this.pendingLabels.delete(label);
       this.lockedLabels.add(label);
       if (this.noDuplicates.includes(label)) {
@@ -108,139 +116,72 @@ export class ShapeManager {
         console.log(`Marked "${label}" as used no_duplicate (${this.usedNoDuplicates.size}/${this.noDuplicates.length})`);
       }
     }
-    console.log(`Labels locked: [${labels.join(', ')}] | Total locked: ${this.lockedLabels.size} | Pending: ${this.pendingLabels.size}`);
+    console.log(`Labels locked: [${[...originalLabels].join(', ')}] | Locked: ${this.lockedLabels.size} | Pending: ${this.pendingLabels.size} | Used: ${this.usedLabels.size}`);
   }
 
   /**
-   * Return labels to pool (dipanggil saat tetromino di-skip)
-   * Hapus dari pending sehingga bisa di-assign lagi ke tetromino baru
+   * Handle skip — label tetap "used", hanya hapus dari pending
+   * Label TIDAK dikembalikan ke pool — sekali tampil, tidak boleh muncul lagi
    */
   returnLabelsToPool(labels: string[]): void {
+    const originalLabels = new Set<string>();
     for (const label of labels) {
+      originalLabels.add(this.resolveOriginalLabel(label));
+    }
+
+    for (const label of originalLabels) {
       this.pendingLabels.delete(label);
+      // TIDAK hapus dari usedLabels — label tetap "used" walau di-skip
     }
-    console.log(`Labels returned to pool: [${labels.join(', ')}] | Pending: ${this.pendingLabels.size}`);
+    console.log(`Labels skipped: [${[...originalLabels].join(', ')}] | Pending: ${this.pendingLabels.size} | Used: ${this.usedLabels.size}`);
   }
 
-  /**
-   * Get shape group for duplicate prevention
-   * S/Z are treated as same group, L/J are treated as same group
-   */
   private getShapeGroup(shapeName: string): string {
-    if (shapeName === 's' || shapeName === 'z') {
-      return 'sz'; // S and Z are similar shapes
-    }
-    if (shapeName === 'l' || shapeName === 'j') {
-      return 'lj'; // L and J are similar shapes
-    }
-    return shapeName; // I, O, T are unique
+    if (shapeName === 's' || shapeName === 'z') return 'sz';
+    if (shapeName === 'l' || shapeName === 'j') return 'lj';
+    return shapeName;
   }
 
-  /**
-   * Check if label can be used based on no_duplicates rules
-   * Returns true if label can be used, false if it should be skipped
-   */
   private canUseLabel(label: string): boolean {
-    // If label not in noDuplicates list, it can always be used
-    if (!this.noDuplicates.includes(label)) {
-      return true;
-    }
-
-    // If label is in noDuplicates and already used, skip it
-    if (this.usedNoDuplicates.has(label)) {
-      return false;
-    }
-
-    // Label is in noDuplicates but not used yet, can be used
+    if (!this.noDuplicates.includes(label)) return true;
+    if (this.usedNoDuplicates.has(label)) return false;
     return true;
   }
 
   /**
-   * Check if a label is available for assignment
-   * Must not be locked, pending, or blocked by no_duplicates
+   * Check if label is fresh — belum pernah di-assign di cycle ini
    */
-  private isLabelAvailable(label: string): boolean {
-    if (this.lockedLabels.has(label)) return false;
-    if (this.pendingLabels.has(label)) return false;
+  private isLabelFresh(label: string): boolean {
+    if (this.usedLabels.has(label)) return false;
     if (!this.canUseLabel(label)) return false;
     return true;
   }
 
   /**
-   * Try to reset the cycle if all available labels are exhausted
-   * Reset lockedLabels saat semua label sudah locked, kecuali no_duplicates
-   */
-  private tryResetCycleIfNeeded(labels: string[]): boolean {
-    // Hitung berapa label yang masih available
-    const availableCount = labels.filter(label => this.isLabelAvailable(label)).length;
-
-    if (availableCount === 0 && this.lockedLabels.size > 0) {
-      console.log(`All labels exhausted (locked: ${this.lockedLabels.size}, pending: ${this.pendingLabels.size}), resetting cycle`);
-
-      // Clear locked labels sehingga bisa dipakai lagi
-      this.lockedLabels.clear();
-
-      // Reset no_duplicates jika semua sudah terpakai
-      if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
-        console.log('All no_duplicates used, resetting no_duplicates cycle');
-        this.usedNoDuplicates.clear();
-      }
-
-      return true; // Cycle was reset
-    }
-
-    return false; // No reset needed
-  }
-
-  /**
-   * Check if there are any valid 2-word labels available
-   * Used to determine if S/Z shapes can be spawned
+   * Check if there are any valid fresh 2-word labels
+   * Jika tidak ada → S/Z shape akan di-reroll ke shape lain
    */
   private hasValidTwoWordLabels(): boolean {
-    // Get available labels (suggested_skills or fallback)
     let availableLabels: string[] = [];
     if (this.suggestedSkills.length > 0) {
       availableLabels = this.suggestedSkills;
     }
-
-    // Check if any available multi-word label exists
-    // If cycle would reset, check if any multi-word label exists at all
-    const hasAvailableMultiWord = availableLabels.some(label =>
-      label.includes(' ') && this.isLabelAvailable(label)
+    return availableLabels.some(label =>
+      label.includes(' ') && this.isLabelFresh(label)
     );
-
-    if (hasAvailableMultiWord) return true;
-
-    // If no available multi-word labels, check if a cycle reset would make one available
-    if (this.lockedLabels.size > 0) {
-      return availableLabels.some(label => label.includes(' '));
-    }
-
-    return false;
   }
 
-  /**
-   * Load shape data dari JSON
-   */
   setShapeData(data: ShapeData[]): void {
     this.shapeData = data;
   }
 
-  /**
-   * Load label data dari JSON
-   */
   setLabelData(labels: string[]): void {
     this.labelData = labels;
   }
 
-  /**
-   * Generate random tetromino with random rotation
-   * Untuk next tetromino (terfilter berdasarkan gameplay mode)
-   */
   generateRandomTetromino(): Tetromino {
     let randomShape = this.getRandomShape();
 
-    // If shape is S or Z and no valid 2-word labels available, re-roll to get different shape
     const maxRerollAttempts = 10;
     let rerollAttempts = 0;
     while ((randomShape.shape_name === 's' || randomShape.shape_name === 'z') &&
@@ -253,24 +194,18 @@ export class ShapeManager {
 
     const labels = this.getLabelsForShape(randomShape);
 
-    // Generate random rotation (0, 90, 180, 270)
     const rotations = [0, 90, 180, 270];
     const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
-
-    // Skip rotation for O shape since it doesn't need it
     const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
 
-    // Apply rotation to matrix if needed
     let matrix = this.cloneMatrix(randomShape.matrix);
-
-    // Rotate matrix to match the rotation angle
     for (let i = 0; i < (finalRotation / 90); i++) {
       matrix = this.rotateMatrix(matrix);
     }
 
     return {
       shape: randomShape,
-      x: Math.floor(4 - matrix[0].length / 2), // Center horizontal based on rotated matrix
+      x: Math.floor(4 - matrix[0].length / 2),
       y: 0,
       rotation: finalRotation,
       matrix: matrix,
@@ -278,32 +213,22 @@ export class ShapeManager {
     };
   }
 
-  /**
-   * Generate random tetromino tanpa filter (untuk switch)
-   * Bisa menghasilkan SEMUA shape termasuk S dan Z
-   */
   generateRandomTetrominoForSwitch(): Tetromino {
     const randomShape = this.getRandomShapeForSwitch();
     const labels = this.getLabelsForShape(randomShape);
 
-    // Generate random rotation (0, 90, 180, 270)
     const rotations = [0, 90, 180, 270];
     const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
-
-    // Skip rotation for O shape since it doesn't need it
     const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
 
-    // Apply rotation to matrix if needed
     let matrix = this.cloneMatrix(randomShape.matrix);
-
-    // Rotate matrix to match the rotation angle
     for (let i = 0; i < (finalRotation / 90); i++) {
       matrix = this.rotateMatrix(matrix);
     }
 
     return {
       shape: randomShape,
-      x: Math.floor(4 - matrix[0].length / 2), // Center horizontal based on rotated matrix
+      x: Math.floor(4 - matrix[0].length / 2),
       y: 0,
       rotation: finalRotation,
       matrix: matrix,
@@ -311,25 +236,15 @@ export class ShapeManager {
     };
   }
 
-  /**
-   * Get random shape dari shape data
-   * Di adapter mode, filter shape S dan Z
-   * Mencegah bentuk yang sama (atau grup yang sama) muncul dalam SHAPE_GAP tetromino terakhir
-   * Shape groups: S/Z sama, L/J sama
-   */
   private getRandomShape(): ShapeData {
-    // Filter shape berdasarkan gameplay type
     let availableShapes = this.shapeData;
 
     if (this.currentGameplayType === 'adapter') {
-      // Di adapter mode, exclude shape S dan Z
       availableShapes = this.shapeData.filter(shape =>
         shape.shape_name !== 's' && shape.shape_name !== 'z'
       );
     }
 
-    // Exclude recent shape groups to ensure minimum gap before same shape group appears again
-    // S/Z treated as same group, L/J treated as same group
     if (this.recentShapeGroups.length > 0 && availableShapes.length > this.recentShapeGroups.length) {
       availableShapes = availableShapes.filter(shape =>
         !this.recentShapeGroups.includes(this.getShapeGroup(shape.shape_name))
@@ -339,29 +254,19 @@ export class ShapeManager {
     const randomIndex = Math.floor(Math.random() * availableShapes.length);
     const selectedShape = availableShapes[randomIndex];
 
-    // Add shape group to recent and maintain max size of SHAPE_GAP
     this.recentShapeGroups.push(this.getShapeGroup(selectedShape.shape_name));
     if (this.recentShapeGroups.length > this.SHAPE_GAP) {
-      this.recentShapeGroups.shift(); // Remove oldest shape group
+      this.recentShapeGroups.shift();
     }
 
     return selectedShape;
   }
 
-  /**
-   * Get random shape tanpa filter (untuk switch)
-   * Mengembalikan SEMUA shape termasuk S dan Z
-   */
   private getRandomShapeForSwitch(): ShapeData {
     const randomIndex = Math.floor(Math.random() * this.shapeData.length);
     return this.shapeData[randomIndex];
   }
 
-  /**
-   * Generate random shape with rotation for switch (tanpa consume label)
-   * Hanya return shape, rotation, dan matrix — label tidak di-generate
-   * Ini mencegah label queue ter-consume sia-sia saat switch mencoba banyak shape
-   */
   generateRandomShapeForSwitch(): { shape: ShapeData; rotation: number; matrix: number[][] } {
     const randomShape = this.getRandomShapeForSwitch();
 
@@ -377,38 +282,30 @@ export class ShapeManager {
     return { shape: randomShape, rotation: finalRotation, matrix };
   }
 
-  /**
-   * Get labels untuk shape berdasarkan jumlah text_position
-   * Prioritas: suggested_skills dari URL parameter > shape.label dari JSON
-   */
   private getLabelsForShape(shape: ShapeData): string[] {
     const labels: string[] = [];
     const textPositionCount = shape.text_position.length;
 
-    // Gunakan suggested_skills jika tersedia, fallback ke shape.label
     let availableLabels: string[] = [];
     if (this.suggestedSkills.length > 0) {
       availableLabels = this.suggestedSkills;
     } else {
-      availableLabels = shape.label || []; // Fallback ke shape.label dari JSON
+      availableLabels = shape.label || [];
     }
 
     if (availableLabels.length === 0) {
-      return ['Label']; // Fallback jika tidak ada labels available
+      return ['Label'];
     }
 
-    // Jika ada 2 text position (S dan Z), coba ambil 2-word label
     if (textPositionCount === 2) {
       const twoWordLabel = this.getTwoWordLabelFromArray(availableLabels);
       if (twoWordLabel) {
         labels.push(...twoWordLabel);
       } else {
-        // Fallback: ambil 2 label berbeda
         labels.push(this.getNextLabelFromArray(availableLabels));
         labels.push(this.getNextLabelFromArray(availableLabels));
       }
     } else {
-      // Shape lain: 1 label
       labels.push(this.getNextLabelFromArray(availableLabels));
     }
 
@@ -416,59 +313,34 @@ export class ShapeManager {
   }
 
   /**
-   * Cari label yang terdiri dari multi-kata dan bagi menjadi 2 bagian seimbang
-   * Untuk shape S dan Z yang punya 2 text position
-   * Menggunakan sequential selection dari multi-word labels
-   *
-   * Contoh:
-   * - 2 kata "data analytics" → ["data", "analytics"]
-   * - 3 kata "join the dots" → ["join", "the dots"]
-   * - 4 kata "join the dots oke" → ["join the", "dots oke"]
-   * - 5 kata "join the dots today please" → ["join the dots", "today please"]
+   * Cari fresh multi-word label untuk S/Z shapes.
+   * TIDAK reuse dari locked/used — jika tidak ada fresh, return null.
+   * S/Z shape akan di-reroll ke shape lain.
    */
   private getTwoWordLabelFromArray(labels: string[]): string[] | null {
-    // Filter multi-word labels
     const multiWordLabels = labels.filter(label => label.includes(' '));
+    if (multiWordLabels.length === 0) return null;
 
-    if (multiWordLabels.length === 0) {
-      return null;
-    }
-
-    // Try cycle reset if needed
-    this.tryResetCycleIfNeeded(labels);
-
-    // Count available multi-word labels (for recentLabels check)
-    let availableMultiWordCount = 0;
-    for (const label of labels) {
-      if (label.includes(' ') && this.isLabelAvailable(label)) {
-        availableMultiWordCount++;
-      }
-    }
-
-    // Search forward from nextSearchIndex for the next valid multi-word label.
-    // - Single-word labels: SKIPPED (stay available for getNextLabelFromArray)
-    // - Blocked labels: SKIPPED
     let selected: string | null = null;
+    const freshMultiWordCount = labels.filter(l => l.includes(' ') && this.isLabelFresh(l)).length;
 
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
       const label = labels[idx];
 
-      if (!label.includes(' ')) continue; // skip single-word
-
-      if (!this.isLabelAvailable(label)) continue; // skip locked/pending/blocked
-
-      if (this.recentLabels.includes(label) && availableMultiWordCount > 1) continue;
+      if (!label.includes(' ')) continue;
+      if (!this.isLabelFresh(label)) continue;
+      if (this.recentLabels.includes(label) && freshMultiWordCount > 1) continue;
 
       selected = label;
       this.nextSearchIndex = (idx + 1) % labels.length;
       break;
     }
 
-    // No valid multi-word label found
     if (!selected) return null;
 
-    // Mark as pending (akan di-lock saat tetromino di-lock ke board)
+    // Mark as used dan pending
+    this.usedLabels.add(selected);
     this.pendingLabels.add(selected);
 
     this.recentLabels.push(selected);
@@ -476,40 +348,33 @@ export class ShapeManager {
       this.recentLabels.shift();
     }
 
-    console.log(`Two-word label assigned: "${selected}" | Pending: ${this.pendingLabels.size} | Locked: ${this.lockedLabels.size}`);
+    console.log(`Two-word label assigned: "${selected}" | Used: ${this.usedLabels.size}/${labels.length}`);
 
-    // Hitung titik tengah untuk pembagian seimbang
     const words = selected.split(' ');
     const midPoint = Math.ceil(words.length / 2);
-
     return [words.slice(0, midPoint).join(' '), words.slice(midPoint).join(' ')];
   }
 
   /**
-   * Get next label secara sequential/urutan
-   * Cycle through labels in order, respecting lock-based tracking dan no_duplicates rules
+   * Get next label secara sequential.
+   * Pass 1: cari fresh label (belum pernah di-assign di cycle ini)
+   * Pass 2: cycle reset — semua label sudah used, clear dan mulai ulang (kecuali no_duplicates)
    */
   private getNextLabelFromArray(labels: string[]): string {
-    if (labels.length === 0) {
-      return 'Label';
-    }
+    if (labels.length === 0) return 'Label';
 
-    // Try cycle reset if needed
-    this.tryResetCycleIfNeeded(labels);
+    // Pass 1: cari fresh label
+    const freshCount = labels.filter(label => this.isLabelFresh(label)).length;
 
-    // Count available labels (for recentLabels check)
-    const availableCount = labels.filter(label => this.isLabelAvailable(label)).length;
-
-    // Search forward from nextSearchIndex for the next available label
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
       const label = labels[idx];
 
-      if (!this.isLabelAvailable(label)) continue;
+      if (!this.isLabelFresh(label)) continue;
+      if (this.recentLabels.includes(label) && freshCount > this.LABEL_GAP) continue;
 
-      if (this.recentLabels.includes(label) && availableCount > this.LABEL_GAP) continue;
-
-      // Found a valid label — mark as pending
+      // Found fresh label — mark as used dan pending
+      this.usedLabels.add(label);
       this.pendingLabels.add(label);
       this.nextSearchIndex = (idx + 1) % labels.length;
 
@@ -518,38 +383,49 @@ export class ShapeManager {
         this.recentLabels.shift();
       }
 
-      console.log(`Label assigned: "${label}" | Pending: ${this.pendingLabels.size} | Locked: ${this.lockedLabels.size}`);
+      console.log(`Label assigned (fresh): "${label}" | Used: ${this.usedLabels.size}/${labels.length}`);
       return label;
     }
 
-    // All labels exhausted — force cycle reset and retry once
-    if (this.lockedLabels.size > 0) {
-      console.log('Force cycle reset — all labels locked/pending/blocked');
-      this.lockedLabels.clear();
+    // Pass 2: semua label sudah used — cycle reset
+    console.log(`All ${labels.length} labels used, resetting cycle (locked: ${this.lockedLabels.size}, pending: ${this.pendingLabels.size})`);
 
-      if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
-        this.usedNoDuplicates.clear();
-      }
+    // Clear usedLabels, tapi re-add yang masih pending (di queue) agar tidak duplikat di queue
+    this.usedLabels.clear();
+    for (const pending of this.pendingLabels) {
+      this.usedLabels.add(pending);
+    }
 
-      for (let i = 0; i < labels.length; i++) {
-        const idx = (this.nextSearchIndex + i) % labels.length;
-        const label = labels[idx];
-        if (!this.isLabelAvailable(label)) continue;
+    // Clear lockedLabels (sudah cycle baru)
+    this.lockedLabels.clear();
 
-        this.pendingLabels.add(label);
-        this.nextSearchIndex = (idx + 1) % labels.length;
-        this.recentLabels.push(label);
-        if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
-        return label;
-      }
+    // Reset no_duplicates jika semua sudah terpakai
+    if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
+      console.log('All no_duplicates used, resetting no_duplicates cycle');
+      this.usedNoDuplicates.clear();
+    }
+
+    // Cari label fresh setelah reset
+    for (let i = 0; i < labels.length; i++) {
+      const idx = (this.nextSearchIndex + i) % labels.length;
+      const label = labels[idx];
+
+      if (!this.isLabelFresh(label)) continue;
+
+      this.usedLabels.add(label);
+      this.pendingLabels.add(label);
+      this.nextSearchIndex = (idx + 1) % labels.length;
+
+      this.recentLabels.push(label);
+      if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
+
+      console.log(`Label assigned (after reset): "${label}" | Used: ${this.usedLabels.size}/${labels.length}`);
+      return label;
     }
 
     return labels[0];
   }
 
-  /**
-   * Hitung jumlah tile dalam matrix
-   */
   private countTiles(matrix: number[][]): number {
     let count = 0;
     for (let row of matrix) {
@@ -560,9 +436,6 @@ export class ShapeManager {
     return count;
   }
 
-  /**
-   * Rotate matrix 90 derajat clockwise
-   */
   rotateMatrix(matrix: number[][]): number[][] {
     const rows = matrix.length;
     const cols = matrix[0].length;
@@ -579,9 +452,6 @@ export class ShapeManager {
     return rotated;
   }
 
-  /**
-   * Rotate tetromino (update rotation angle dan matrix)
-   */
   rotateTetromino(tetromino: Tetromino): Tetromino {
     const newRotation = (tetromino.rotation + 90) % 360;
     const newMatrix = this.rotateMatrix(tetromino.matrix);
@@ -593,16 +463,10 @@ export class ShapeManager {
     };
   }
 
-  /**
-   * Clone matrix
-   */
   private cloneMatrix(matrix: number[][]): number[][] {
     return matrix.map(row => [...row]);
   }
 
-  /**
-   * Get shape data by name
-   */
   getShapeByName(name: string): ShapeData | undefined {
     return this.shapeData.find(shape => shape.shape_name === name);
   }
