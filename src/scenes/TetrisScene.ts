@@ -989,7 +989,7 @@ export class TetrisScene extends Phaser.Scene {
         y: currentY,
         rotation: randomShape.rotation,
         matrix: randomShape.matrix,
-        labels: currentLabels // Gunakan label dari tetromino yang sedang aktif
+        labels: this.shapeManager.adaptLabelsForShape(currentLabels, randomShape.shape)
       };
 
       // Check if this shape+rotation can be placed at current position

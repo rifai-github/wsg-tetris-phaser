@@ -87,12 +87,9 @@ export class ShapeManager {
       return label;
     }
     for (const skill of this.suggestedSkills) {
-      if (!skill.includes(' ')) continue;
-      const words = skill.split(' ');
-      const midPoint = Math.ceil(words.length / 2);
-      const part1 = words.slice(0, midPoint).join(' ');
-      const part2 = words.slice(midPoint).join(' ');
-      if (label === part1 || label === part2) {
+      if (!this.isSplittableLabel(skill)) continue;
+      const parts = this.splitLabelForSZ(skill);
+      if (parts.some(part => part === label)) {
         return skill;
       }
     }
@@ -136,6 +133,45 @@ export class ShapeManager {
     console.log(`Labels skipped: [${[...originalLabels].join(', ')}] | Pending: ${this.pendingLabels.size} | Used: ${this.usedLabels.size}`);
   }
 
+  /**
+   * Adapt labels saat switch ke shape baru.
+   * - Jika switch ke S/Z (textPositionCount=2) dan label saat ini 1 buah + splittable → split
+   * - Jika switch dari S/Z (textPositionCount=1) dan label saat ini 2 buah → join kembali
+   */
+  adaptLabelsForShape(currentLabels: string[], newShape: ShapeData): string[] {
+    const newTextPositionCount = newShape.text_position.length;
+
+    if (newTextPositionCount === 2 && currentLabels.length === 1) {
+      // Switch ke S/Z, coba split label
+      const label = currentLabels[0];
+      if (this.isSplittableLabel(label)) {
+        const split = this.splitLabelForSZ(label);
+        console.log(`Labels adapted for S/Z: "${label}" → ["${split[0]}", "${split[1]}"]`);
+        return split;
+      }
+      // Tidak bisa di-split, 1 posisi saja (posisi kedua kosong)
+      return [label, ''];
+    }
+
+    if (newTextPositionCount === 1 && currentLabels.length === 2) {
+      // Switch dari S/Z ke shape lain, join kembali
+      const joined = currentLabels.join(' ');
+      // Cek apakah original label ada di suggestedSkills (bisa dengan spasi atau hyphen)
+      const originalLabel = this.resolveOriginalLabel(currentLabels[0]);
+      if (originalLabel !== currentLabels[0]) {
+        // Resolve berhasil — gunakan original label (dengan hyphen jika memang begitu)
+        console.log(`Labels adapted from S/Z: ["${currentLabels[0]}", "${currentLabels[1]}"] → "${originalLabel}"`);
+        return [originalLabel];
+      }
+      // Fallback: join dengan spasi
+      console.log(`Labels adapted from S/Z: ["${currentLabels[0]}", "${currentLabels[1]}"] → "${joined}"`);
+      return [joined];
+    }
+
+    // textPositionCount cocok, tidak perlu adapt
+    return currentLabels;
+  }
+
   private getShapeGroup(shapeName: string): string {
     if (shapeName === 's' || shapeName === 'z') return 'sz';
     if (shapeName === 'l' || shapeName === 'j') return 'lj';
@@ -151,6 +187,23 @@ export class ShapeManager {
   /**
    * Check if label is fresh — belum pernah di-assign DAN tidak ada di board
    */
+  /**
+   * Check apakah label bisa di-split untuk S/Z shapes (mengandung spasi atau hyphen)
+   */
+  private isSplittableLabel(label: string): boolean {
+    return label.includes(' ') || label.includes('-');
+  }
+
+  /**
+   * Split label untuk S/Z shapes. Hyphen di-replace dengan spasi sebelum split.
+   */
+  private splitLabelForSZ(label: string): string[] {
+    const normalized = label.replace(/-/g, ' ');
+    const words = normalized.split(' ');
+    const midPoint = Math.ceil(words.length / 2);
+    return [words.slice(0, midPoint).join(' '), words.slice(midPoint).join(' ')];
+  }
+
   private isLabelFresh(label: string): boolean {
     if (this.usedLabels.has(label)) return false;
     if (this.lockedLabels.has(label)) return false; // Label di board tidak boleh dipakai lagi
@@ -168,7 +221,7 @@ export class ShapeManager {
       availableLabels = this.suggestedSkills;
     }
     return availableLabels.some(label =>
-      label.includes(' ') && this.isLabelFresh(label)
+      this.isSplittableLabel(label) && this.isLabelFresh(label)
     );
   }
 
@@ -319,19 +372,19 @@ export class ShapeManager {
    * S/Z shape akan di-reroll ke shape lain.
    */
   private getTwoWordLabelFromArray(labels: string[]): string[] | null {
-    const multiWordLabels = labels.filter(label => label.includes(' '));
-    if (multiWordLabels.length === 0) return null;
+    const splittableLabels = labels.filter(label => this.isSplittableLabel(label));
+    if (splittableLabels.length === 0) return null;
 
     let selected: string | null = null;
-    const freshMultiWordCount = labels.filter(l => l.includes(' ') && this.isLabelFresh(l)).length;
+    const freshSplittableCount = labels.filter(l => this.isSplittableLabel(l) && this.isLabelFresh(l)).length;
 
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
       const label = labels[idx];
 
-      if (!label.includes(' ')) continue;
+      if (!this.isSplittableLabel(label)) continue;
       if (!this.isLabelFresh(label)) continue;
-      if (this.recentLabels.includes(label) && freshMultiWordCount > 1) continue;
+      if (this.recentLabels.includes(label) && freshSplittableCount > 1) continue;
 
       selected = label;
       this.nextSearchIndex = (idx + 1) % labels.length;
@@ -351,9 +404,7 @@ export class ShapeManager {
 
     console.log(`Two-word label assigned: "${selected}" | Used: ${this.usedLabels.size}/${labels.length}`);
 
-    const words = selected.split(' ');
-    const midPoint = Math.ceil(words.length / 2);
-    return [words.slice(0, midPoint).join(' '), words.slice(midPoint).join(' ')];
+    return this.splitLabelForSZ(selected);
   }
 
   /**
