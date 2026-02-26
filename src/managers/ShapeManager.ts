@@ -149,10 +149,11 @@ export class ShapeManager {
   }
 
   /**
-   * Check if label is fresh — belum pernah di-assign di cycle ini
+   * Check if label is fresh — belum pernah di-assign DAN tidak ada di board
    */
   private isLabelFresh(label: string): boolean {
     if (this.usedLabels.has(label)) return false;
+    if (this.lockedLabels.has(label)) return false; // Label di board tidak boleh dipakai lagi
     if (!this.canUseLabel(label)) return false;
     return true;
   }
@@ -396,8 +397,7 @@ export class ShapeManager {
       this.usedLabels.add(pending);
     }
 
-    // Clear lockedLabels (sudah cycle baru)
-    this.lockedLabels.clear();
+    // lockedLabels TIDAK di-clear — label yang ada di board tetap di-block
 
     // Reset no_duplicates jika semua sudah terpakai
     if (this.noDuplicates.length > 0 && this.usedNoDuplicates.size >= this.noDuplicates.length) {
@@ -405,7 +405,7 @@ export class ShapeManager {
       this.usedNoDuplicates.clear();
     }
 
-    // Cari label fresh setelah reset
+    // Cari label fresh setelah reset (not used, not locked, not blocked)
     for (let i = 0; i < labels.length; i++) {
       const idx = (this.nextSearchIndex + i) % labels.length;
       const label = labels[idx];
@@ -420,6 +420,47 @@ export class ShapeManager {
       if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
 
       console.log(`Label assigned (after reset): "${label}" | Used: ${this.usedLabels.size}/${labels.length}`);
+      return label;
+    }
+
+    // Pass 3: semua label locked atau pending — reuse locked label sebagai last resort
+    // Ini terjadi ketika jumlah tetromino melebihi total label (semua sudah di board)
+    console.log(`All labels locked/pending, reusing locked label as last resort`);
+    for (let i = 0; i < labels.length; i++) {
+      const idx = (this.nextSearchIndex + i) % labels.length;
+      const label = labels[idx];
+
+      // Skip jika masih pending (sudah di queue, belum di-lock)
+      if (this.pendingLabels.has(label)) continue;
+      // Skip jika blocked oleh no_duplicates
+      if (!this.canUseLabel(label)) continue;
+      // Skip recentLabels jika masih ada alternatif
+      if (this.recentLabels.includes(label)) continue;
+
+      this.usedLabels.add(label);
+      this.pendingLabels.add(label);
+      this.nextSearchIndex = (idx + 1) % labels.length;
+
+      this.recentLabels.push(label);
+      if (this.recentLabels.length > this.LABEL_GAP) this.recentLabels.shift();
+
+      console.log(`Label assigned (reuse locked): "${label}" | Locked: ${this.lockedLabels.size}`);
+      return label;
+    }
+
+    // Pass 4: absolute fallback — ignore recentLabels constraint
+    for (let i = 0; i < labels.length; i++) {
+      const idx = (this.nextSearchIndex + i) % labels.length;
+      const label = labels[idx];
+
+      if (this.pendingLabels.has(label)) continue;
+      if (!this.canUseLabel(label)) continue;
+
+      this.usedLabels.add(label);
+      this.pendingLabels.add(label);
+      this.nextSearchIndex = (idx + 1) % labels.length;
+
+      console.log(`Label assigned (fallback): "${label}"`);
       return label;
     }
 
