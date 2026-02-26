@@ -921,6 +921,35 @@ export class TetrisScene extends Phaser.Scene {
   private rotate(): void {
     if (!this.currentTetromino || this.isCountdownActive || !this.isGameActive) return;
 
+    // Shape O tidak bisa di-rotate (selalu 0°)
+    if (this.currentTetromino.shape.shape_name === 'o') return;
+
+    const shapeName = this.currentTetromino.shape.shape_name;
+
+    // Shape S/Z toggle antara 0° dan 90°
+    if (shapeName === 's' || shapeName === 'z') {
+      if (this.currentTetromino.rotation === 0) {
+        // 0° → 90°: rotate sekali
+        const rotated = this.shapeManager.rotateTetromino(this.currentTetromino);
+        if (this.gameBoard.canPlace(rotated)) {
+          this.currentTetromino = rotated;
+          this.updatePrediction();
+        }
+      } else {
+        // 90° → 0°: kembali ke matrix original
+        const original = {
+          ...this.currentTetromino,
+          rotation: 0,
+          matrix: this.currentTetromino.shape.matrix.map(row => [...row])
+        };
+        if (this.gameBoard.canPlace(original)) {
+          this.currentTetromino = original;
+          this.updatePrediction();
+        }
+      }
+      return;
+    }
+
     const rotatedTetromino = this.shapeManager.rotateTetromino(this.currentTetromino);
     if (this.gameBoard.canPlace(rotatedTetromino)) {
       this.currentTetromino = rotatedTetromino;

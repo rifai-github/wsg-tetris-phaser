@@ -250,7 +250,9 @@ export class ShapeManager {
 
     const rotations = [0, 90, 180, 270];
     const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
-    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+    const finalRotation = randomShape.shape_name === 'o' ? 0
+      : (randomShape.shape_name === 's' || randomShape.shape_name === 'z') ? [0, 90][Math.floor(Math.random() * 2)]
+      : randomRotation;
 
     let matrix = this.cloneMatrix(randomShape.matrix);
     for (let i = 0; i < (finalRotation / 90); i++) {
@@ -273,7 +275,9 @@ export class ShapeManager {
 
     const rotations = [0, 90, 180, 270];
     const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
-    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+    const finalRotation = randomShape.shape_name === 'o' ? 0
+      : (randomShape.shape_name === 's' || randomShape.shape_name === 'z') ? [0, 90][Math.floor(Math.random() * 2)]
+      : randomRotation;
 
     let matrix = this.cloneMatrix(randomShape.matrix);
     for (let i = 0; i < (finalRotation / 90); i++) {
@@ -326,7 +330,9 @@ export class ShapeManager {
 
     const rotations = [0, 90, 180, 270];
     const randomRotation = rotations[Math.floor(Math.random() * rotations.length)];
-    const finalRotation = randomShape.shape_name === 'o' ? 0 : randomRotation;
+    const finalRotation = randomShape.shape_name === 'o' ? 0
+      : (randomShape.shape_name === 's' || randomShape.shape_name === 'z') ? [0, 90][Math.floor(Math.random() * 2)]
+      : randomRotation;
 
     let matrix = this.cloneMatrix(randomShape.matrix);
     for (let i = 0; i < (finalRotation / 90); i++) {
